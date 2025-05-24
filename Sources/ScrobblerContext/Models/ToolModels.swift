@@ -1,0 +1,151 @@
+//
+//  ToolModels.swift
+//  ScrobblerContext
+//
+//  Created by Tomas Martins on 17/05/25.
+//
+
+import Foundation
+
+// MARK: - Tool Input Models
+
+/// Base protocol for all tool inputs
+protocol ToolInput {
+    static var requiredParameters: [String] { get }
+    static var optionalParameters: [String: (any Sendable)] { get }
+}
+
+// MARK: - Authentication
+struct AuthenticateInput: ToolInput {
+    let username: String
+    let password: String
+    
+    static let requiredParameters = ["username", "password"]
+    static let optionalParameters: [String: (any Sendable)] = [:]
+}
+
+// MARK: - Artist Tools
+struct SearchArtistInput: ToolInput {
+    let query: String
+    let limit: Int
+    
+    static let requiredParameters = ["query"]
+    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+}
+
+struct GetArtistInfoInput: ToolInput {
+    let name: String
+    let autocorrect: Bool
+    let username: String?
+    let language: String
+    
+    static let requiredParameters = ["name"]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "autocorrect": true,
+        "username": "",
+        "language": "en"
+    ]
+}
+
+struct GetSimilarArtistsInput: ToolInput {
+    let name: String
+    let limit: Int
+    
+    static let requiredParameters = ["name"]
+    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+}
+
+// MARK: - Album Tools
+struct SearchAlbumInput: ToolInput {
+    let query: String
+    let limit: Int
+    
+    static let requiredParameters = ["query"]
+    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+}
+
+struct GetAlbumInfoInput: ToolInput {
+    let album: String
+    let artist: String
+    let autocorrect: Bool
+    let username: String?
+    let language: String
+    
+    static let requiredParameters = ["album", "artist"]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "autocorrect": true,
+        "username": "",
+        "language": "en"
+    ]
+}
+
+// MARK: - Track Tools
+struct SearchTrackInput: ToolInput {
+    let query: String
+    let artist: String?
+    let limit: Int
+    
+    static let requiredParameters = ["query"]
+    static let optionalParameters: [String: (any Sendable)] = ["artist": "", "limit": 10]
+}
+
+// MARK: - User Tools
+struct GetUserRecentTracksInput: ToolInput {
+    let username: String
+    let limit: Int
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+}
+
+struct GetUserTopArtistsInput: ToolInput {
+    let username: String
+    let limit: Int
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+}
+
+// MARK: - Scrobble Tools
+struct ScrobbleTrackInput: ToolInput {
+    let artist: String
+    let track: String
+    let album: String?
+    
+    static let requiredParameters = ["artist", "track"]
+    static let optionalParameters: [String: (any Sendable)] = ["album": ""]
+}
+
+// MARK: - Tool Output Models
+
+struct ToolResult {
+    let success: Bool
+    let data: [String: Any]?
+    let error: String?
+    
+    static func success(data: [String: Any]) -> ToolResult {
+        return ToolResult(success: true, data: data, error: nil)
+    }
+    
+    static func failure(error: String) -> ToolResult {
+        return ToolResult(success: false, data: nil, error: error)
+    }
+    
+    func toJSON() throws -> String {
+        var result: [String: Any] = ["success": success]
+        
+        if let data = data {
+            result.merge(data) { _, new in new }
+        }
+        
+        if let error = error {
+            result["error"] = error
+        }
+        
+        let jsonData = try JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted])
+        guard let jsonString = String(data: jsonData, encoding: .utf8) else {
+            throw ToolError.jsonSerializationFailed
+        }
+        return jsonString
+    }
+}
