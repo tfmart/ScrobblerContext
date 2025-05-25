@@ -26,7 +26,7 @@ final class OAuthCallbackServer: Sendable {
     
     private func setupRoutes() {
         // OAuth callback endpoint
-        server["/callback"] = { [weak self] request in
+        let callbackHandler: @Sendable (HttpRequest) -> HttpResponse = { [weak self] request in
             guard let self = self else {
                 return .internalServerError
             }
@@ -48,6 +48,8 @@ final class OAuthCallbackServer: Sendable {
             // Return immediate success page
             return .ok(.html(self.generateSuccessPage()))
         }
+        
+        server["/callback"] = callbackHandler
         
         // Health check endpoint
         server["/health"] = { _ in
