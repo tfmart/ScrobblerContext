@@ -81,8 +81,15 @@ struct ArtistTools {
                     ]),
                     "language": .object([
                         "type": .string("string"),
-                        "description": .string("Language for biography (ISO 639-1 code, e.g., 'en', 'es', 'fr')"),
-                        "default": .string("en")
+                        "description": .string("Language for biography (ISO 639-1 code). Supported: en, fr, de, it, es, pt, nl, sv, no, da, fi, is, ru, pl, cs, hu, ro, tr, el, ar, he, hi, zh, ja, ko, vi, th, id"),
+                        "default": .string("en"),
+                        "enum": .array([
+                            .string("en"), .string("fr"), .string("de"), .string("it"), .string("es"), .string("pt"),
+                            .string("nl"), .string("sv"), .string("no"), .string("da"), .string("fi"), .string("is"),
+                            .string("ru"), .string("pl"), .string("cs"), .string("hu"), .string("ro"), .string("tr"),
+                            .string("el"), .string("ar"), .string("he"), .string("hi"), .string("zh"), .string("ja"),
+                            .string("ko"), .string("vi"), .string("th"), .string("id")
+                        ])
                     ])
                 ]),
                 "required": .array([.string("name")])
@@ -163,9 +170,12 @@ struct ArtistTools {
         let input = try parseGetArtistInfoInput(arguments)
         
         do {
-            // For now, we'll use the basic getArtistInfo method
-            // In the future, we can extend LastFMService to support additional parameters
-            let artist = try await lastFMService.getArtistInfo(name: input.name)
+            let artist = try await lastFMService.getArtistInfo(
+                name: input.name,
+                autocorrect: input.autocorrect,
+                username: input.username,
+                language: input.language
+            )
             
             logger.info("Retrieved artist info for: \(input.name)")
             
@@ -184,7 +194,8 @@ struct ArtistTools {
         do {
             let similarArtists = try await lastFMService.getSimilarArtists(
                 name: input.name,
-                limit: input.limit
+                limit: input.limit,
+                autocorrect: input.autocorrect
             )
             
             logger.info("Found \(similarArtists.count) similar artists for: \(input.name)")
@@ -199,6 +210,20 @@ struct ArtistTools {
     }
     
     // MARK: - Input Parsing Helpers
+    
+    private func validateLanguageCode(_ language: String) throws -> String {
+        let supportedLanguages = [
+            "en", "fr", "de", "it", "es", "pt", "nl", "sv", "no", "da",
+            "fi", "is", "ru", "pl", "cs", "hu", "ro", "tr", "el", "ar",
+            "he", "hi", "zh", "ja", "ko", "vi", "th", "id"
+        ]
+        
+        guard supportedLanguages.contains(language) else {
+            throw ToolError.invalidParameterType("language", expected: "supported ISO 639-1 code: \(supportedLanguages.joined(separator: ", "))")
+        }
+        
+        return language
+    }
     
     private func parseSearchArtistInput(_ arguments: [String: (any Sendable)]) throws -> SearchArtistInput {
         guard let queryValue = arguments["query"] else {
@@ -224,7 +249,8 @@ struct ArtistTools {
         let name = "\(nameValue)"
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
         let username = arguments.getString(for: "username")
-        let language = arguments.getString(for: "language") ?? "en"
+        let languageInput = arguments.getString(for: "language") ?? "en"
+        let language = try validateLanguageCode(languageInput)
         
         return GetArtistInfoInput(
             name: name,

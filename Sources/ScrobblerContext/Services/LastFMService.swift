@@ -38,14 +38,23 @@ final class LastFMService: Sendable {
         return try await manager.search(artist: query, limit: limit, page: page)
     }
     
-    func getArtistInfo(name: String) async throws -> SBKArtist {
-        logger.info("Getting artist info for: \(name)")
-        return try await manager.getInfo(forArtist: .artistName(name))
+    func getArtistInfo(name: String, autocorrect: Bool = true, username: String? = nil, language: String = "en") async throws -> SBKArtist {
+        logger.info("Getting artist info for: \(name) (autocorrect: \(autocorrect), username: \(username ?? "none"), language: \(language))")
+        
+        // Convert string language code to SBKLanguageCode
+        let languageCode = SBKLanguageCode(rawValue: language) ?? .english
+        
+        return try await manager.getInfo(
+            forArtist: .artistName(name),
+            autocorrect: autocorrect,
+            username: username,
+            language: languageCode
+        )
     }
     
-    func getSimilarArtists(name: String, limit: Int = 10) async throws -> [SBKSimilarArtist] {
-        logger.info("Getting similar artists for: \(name) (limit: \(limit))")
-        return try await manager.getSimilarArtists(.artistName(name), limit: limit)
+    func getSimilarArtists(name: String, limit: Int = 10, autocorrect: Bool = true) async throws -> [SBKSimilarArtist] {
+        logger.info("Getting similar artists for: \(name) (limit: \(limit), autocorrect: \(autocorrect))")
+        return try await manager.getSimilarArtists(.artistName(name), limit: limit, autoCorrect: autocorrect)
     }
     
     // MARK: - Album Services
