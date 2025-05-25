@@ -12,7 +12,7 @@ import Foundation
 /// Base protocol for all tool inputs
 protocol ToolInput {
     static var requiredParameters: [String] { get }
-    static var optionalParameters: [String: (any Sendable)] { get }
+    static var optionalParameters: [String: (any Sendable)?] { get }
 }
 
 // MARK: - Authentication
@@ -21,7 +21,7 @@ struct AuthenticateInput: ToolInput {
     let password: String
     
     static let requiredParameters = ["username", "password"]
-    static let optionalParameters: [String: (any Sendable)] = [:]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
 }
 
 // MARK: - Artist Tools
@@ -31,10 +31,7 @@ struct SearchArtistInput: ToolInput {
     let page: Int
     
     static let requiredParameters = ["query"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "limit": 10,
-        "page": 1
-    ]
+    static let optionalParameters: [String: (any Sendable)?] = ["limit": 10, "page": 1]
 }
 
 struct GetArtistInfoInput: ToolInput {
@@ -44,7 +41,7 @@ struct GetArtistInfoInput: ToolInput {
     let language: String
     
     static let requiredParameters = ["name"]
-    static let optionalParameters: [String: (any Sendable)] = [
+    static let optionalParameters: [String: (any Sendable)?] = [
         "autocorrect": true,
         "username": "",
         "language": "en"
@@ -57,7 +54,7 @@ struct GetSimilarArtistsInput: ToolInput {
     let autocorrect: Bool
     
     static let requiredParameters = ["name"]
-    static let optionalParameters: [String: (any Sendable)] = [
+    static let optionalParameters: [String: (any Sendable)?] = [
         "limit": 10,
         "autocorrect": true
     ]
@@ -70,10 +67,7 @@ struct SearchAlbumInput: ToolInput {
     let page: Int
     
     static let requiredParameters = ["query"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "limit": 10,
-        "page": 1
-    ]
+    static let optionalParameters: [String: (any Sendable)?] = ["limit": 10, "page": 1]
 }
 
 struct GetAlbumInfoInput: ToolInput {
@@ -84,7 +78,7 @@ struct GetAlbumInfoInput: ToolInput {
     let language: String
     
     static let requiredParameters = ["album", "artist"]
-    static let optionalParameters: [String: (any Sendable)] = [
+    static let optionalParameters: [String: (any Sendable)?] = [
         "autocorrect": true,
         "username": "",
         "language": "en"
@@ -99,24 +93,20 @@ struct SearchTrackInput: ToolInput {
     let page: Int
     
     static let requiredParameters = ["query"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "artist": "",
-        "limit": 10,
-        "page": 1
-    ]
+    static let optionalParameters: [String: (any Sendable)?] = ["artist": "", "limit": 10, "page": 1]
 }
 
 struct GetTrackInfoInput: ToolInput {
     let track: String
     let artist: String
-    let autocorrect: Bool
     let username: String?
+    let autocorrect: Bool
     let language: String
     
     static let requiredParameters = ["track", "artist"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "autocorrect": true,
+    static let optionalParameters: [String: (any Sendable)?] = [
         "username": "",
+        "autocorrect": false,
         "language": "en"
     ]
 }
@@ -124,16 +114,15 @@ struct GetTrackInfoInput: ToolInput {
 struct GetSimilarTracksInput: ToolInput {
     let track: String
     let artist: String
-    let limit: Int?
     let autocorrect: Bool
+    let limit: Int?
     
     static let requiredParameters = ["track", "artist"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "limit": 10,
-        "autocorrect": true
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "autocorrect": true,
+        "limit": nil
     ]
 }
-
 
 // MARK: - User Tools
 struct GetUserRecentTracksInput: ToolInput {
@@ -145,7 +134,7 @@ struct GetUserRecentTracksInput: ToolInput {
     let endDate: Date?
     
     static let requiredParameters = ["username"]
-    static let optionalParameters: [String: (any Sendable)] = [
+    static let optionalParameters: [String: (any Sendable)?] = [
         "limit": 50,
         "page": 1,
         "start_date": 0,
@@ -161,27 +150,93 @@ struct GetUserTopArtistsInput: ToolInput {
     let page: Int
     
     static let requiredParameters = ["username"]
-    static let optionalParameters: [String: (any Sendable)] = [
+    static let optionalParameters: [String: (any Sendable)?] = [
         "period": "overall",
         "limit": 10,
         "page": 1
     ]
 }
 
+struct GetUserTopTracksInput: ToolInput {
+    let username: String
+    let period: String
+    let limit: Int
+    let page: Int
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "period": "overall",
+        "limit": 10,
+        "page": 1
+    ]
+}
+
+struct GetUserInfoInput: ToolInput {
+    let username: String
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
 // MARK: - Scrobble Tools
 struct ScrobbleTrackInput: ToolInput {
     let artist: String
     let track: String
+    let timestamp: Date?
     let album: String?
-    let timestamp: Int?
+    let albumArtist: String?
+    let trackNumber: Int?
     let duration: Int?
+    let chosenByUser: Bool?
+    let mbid: String?
     
     static let requiredParameters = ["artist", "track"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "album": "",
+    static let optionalParameters: [String: (any Sendable)?] = [
         "timestamp": 0,
-        "duration": 0
+        "album": "",
+        "album_artist": "",
+        "track_number": 0,
+        "duration": 0,
+        "chosen_by_user": false,
+        "mbid": ""
     ]
+}
+
+struct UpdateNowPlayingInput: ToolInput {
+    let artist: String
+    let track: String
+    let album: String?
+    let trackNumber: Int?
+    let context: String?
+    let mbid: String?
+    let duration: Int?
+    let albumArtist: String?
+    
+    static let requiredParameters = ["artist", "track"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "album": "",
+        "track_number": 0,
+        "context": "",
+        "mbid": "",
+        "duration": 0,
+        "album_artist": ""
+    ]
+}
+
+struct LoveTrackInput: ToolInput {
+    let artist: String
+    let track: String
+    
+    static let requiredParameters = ["artist", "track"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
+struct UnloveTrackInput: ToolInput {
+    let artist: String
+    let track: String
+    
+    static let requiredParameters = ["artist", "track"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
 }
 
 // MARK: - Tool Output Models

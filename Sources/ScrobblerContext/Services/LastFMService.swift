@@ -214,7 +214,17 @@ final class LastFMService: Sendable {
     
     // MARK: - Scrobbling Services
     
-    func scrobbleTrack(artist: String, track: String, album: String? = nil) async throws -> Bool {
+    func scrobbleTrack(
+        artist: String,
+        track: String,
+        timestamp: Date? = nil,
+        album: String? = nil,
+        albumArtist: String? = nil,
+        trackNumber: Int? = nil,
+        duration: Int? = nil,
+        chosenByUser: Bool? = nil,
+        mbid: String? = nil
+    ) async throws -> Bool {
         guard await isAuthenticated() else {
             logger.error("Cannot scrobble: User is not authenticated")
             throw ToolError.authenticationRequired
@@ -225,8 +235,13 @@ final class LastFMService: Sendable {
         let trackToScrobble = SBKTrackToScrobble(
             artist: artist,
             track: track,
-            timestamp: Date(),
-            album: album
+            timestamp: timestamp ?? Date(),
+            album: album,
+            albumArtist: albumArtist,
+            trackNumber: trackNumber,
+            duration: duration,
+            chosenByUser: chosenByUser,
+            mbid: mbid
         )
         
         let response = try await manager.scrobble(tracks: [trackToScrobble])
@@ -241,7 +256,16 @@ final class LastFMService: Sendable {
         return success
     }
     
-    func updateNowPlaying(artist: String, track: String, album: String? = nil) async throws -> Bool {
+    func updateNowPlaying(
+        artist: String,
+        track: String,
+        album: String? = nil,
+        trackNumber: Int? = nil,
+        context: String? = nil,
+        mbid: String? = nil,
+        duration: Int? = nil,
+        albumArtist: String? = nil
+    ) async throws -> Bool {
         guard await isAuthenticated() else {
             logger.error("Cannot update now playing: User is not authenticated")
             throw ToolError.authenticationRequired
@@ -253,7 +277,12 @@ final class LastFMService: Sendable {
             _ = try await manager.updateNowPlaying(
                 artist: artist,
                 track: track,
-                album: album
+                album: album,
+                trackNumber: trackNumber,
+                context: context,
+                mbid: mbid,
+                duration: duration,
+                albumArtist: albumArtist
             )
             logger.info("Successfully updated now playing: \(track) by \(artist)")
             return true

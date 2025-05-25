@@ -376,25 +376,3 @@ struct UserTools {
         return GetUserInfoInput(username: username)
     }
 }
-
-// MARK: - Input Models for User Tools
-struct GetUserTopTracksInput: ToolInput {
-    let username: String
-    let period: String
-    let limit: Int
-    let page: Int
-    
-    static let requiredParameters = ["username"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "period": "overall",
-        "limit": 10,
-        "page": 1
-    ]
-}
-
-struct GetUserInfoInput: ToolInput {
-    let username: String
-    
-    static let requiredParameters = ["username"]
-    static let optionalParameters: [String: (any Sendable)] = [:]
-}

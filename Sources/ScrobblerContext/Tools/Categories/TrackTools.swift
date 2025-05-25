@@ -279,8 +279,8 @@ struct TrackTools {
         return GetTrackInfoInput(
             track: track,
             artist: artist,
-            autocorrect: autocorrect,
             username: username,
+            autocorrect: autocorrect,
             language: language
         )
     }
@@ -302,8 +302,8 @@ struct TrackTools {
         return GetSimilarTracksInput(
             track: track,
             artist: artist,
-            limit: limit,
-            autocorrect: autocorrect
+            autocorrect: autocorrect,
+            limit: limit
         )
     }
 }

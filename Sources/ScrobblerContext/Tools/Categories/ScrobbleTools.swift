@@ -45,17 +45,33 @@ struct ScrobbleTools {
                         "type": .string("string"),
                         "description": .string("Name of the track to scrobble")
                     ]),
-                    "album": .object([
-                        "type": .string("string"),
-                        "description": .string("Name of the album (optional but recommended)")
-                    ]),
                     "timestamp": .object([
                         "type": .string("integer"),
                         "description": .string("Unix timestamp when the track was played (optional, defaults to current time)")
                     ]),
+                    "album": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the album (optional but recommended)")
+                    ]),
+                    "album_artist": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the album artist if different from track artist (optional)")
+                    ]),
+                    "track_number": .object([
+                        "type": .string("integer"),
+                        "description": .string("Track number on the album (optional)")
+                    ]),
                     "duration": .object([
                         "type": .string("integer"),
                         "description": .string("Length of the track in seconds (optional)")
+                    ]),
+                    "chosen_by_user": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Whether the track was chosen by the user or was automatically played (optional)")
+                    ]),
+                    "mbid": .object([
+                        "type": .string("string"),
+                        "description": .string("MusicBrainz ID for the track (optional)")
                     ])
                 ]),
                 "required": .array([.string("artist"), .string("track")])
@@ -82,13 +98,25 @@ struct ScrobbleTools {
                         "type": .string("string"),
                         "description": .string("Name of the album currently playing (optional)")
                     ]),
+                    "track_number": .object([
+                        "type": .string("integer"),
+                        "description": .string("Track number on the album (optional)")
+                    ]),
+                    "context": .object([
+                        "type": .string("string"),
+                        "description": .string("Sub-client context for the playing track (optional)")
+                    ]),
+                    "mbid": .object([
+                        "type": .string("string"),
+                        "description": .string("MusicBrainz ID for the track (optional)")
+                    ]),
                     "duration": .object([
                         "type": .string("integer"),
                         "description": .string("Length of the track in seconds (optional)")
                     ]),
-                    "track_number": .object([
-                        "type": .string("integer"),
-                        "description": .string("Track number on the album (optional)")
+                    "album_artist": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the album artist if different from track artist (optional)")
                     ])
                 ]),
                 "required": .array([.string("artist"), .string("track")])
@@ -166,7 +194,13 @@ struct ScrobbleTools {
             let success = try await lastFMService.scrobbleTrack(
                 artist: input.artist,
                 track: input.track,
-                album: input.album
+                timestamp: input.timestamp,
+                album: input.album,
+                albumArtist: input.albumArtist,
+                trackNumber: input.trackNumber,
+                duration: input.duration,
+                chosenByUser: input.chosenByUser,
+                mbid: input.mbid
             )
             
             if success {
@@ -196,7 +230,12 @@ struct ScrobbleTools {
             let success = try await lastFMService.updateNowPlaying(
                 artist: input.artist,
                 track: input.track,
-                album: input.album
+                album: input.album,
+                trackNumber: input.trackNumber,
+                context: input.context,
+                mbid: input.mbid,
+                duration: input.duration,
+                albumArtist: input.albumArtist
             )
             
             logger.info("Successfully updated now playing: '\(input.track)' by '\(input.artist)'")
@@ -270,16 +309,30 @@ struct ScrobbleTools {
         
         let artist = "\(artistValue)"
         let track = "\(trackValue)"
+        
+        // Parse timestamp and convert to Date
+        var timestamp: Date?
+        if let timestampValue = arguments.getInt(for: "timestamp") {
+            timestamp = Date(timeIntervalSince1970: TimeInterval(timestampValue))
+        }
+        
         let album = arguments.getString(for: "album")
-        let timestamp = arguments.getInt(for: "timestamp")
+        let albumArtist = arguments.getString(for: "album_artist")
+        let trackNumber = arguments.getInt(for: "track_number")
         let duration = arguments.getInt(for: "duration")
+        let chosenByUser = arguments.getBool(for: "chosen_by_user")
+        let mbid = arguments.getString(for: "mbid")
         
         return ScrobbleTrackInput(
             artist: artist,
             track: track,
-            album: album,
             timestamp: timestamp,
-            duration: duration
+            album: album,
+            albumArtist: albumArtist,
+            trackNumber: trackNumber,
+            duration: duration,
+            chosenByUser: chosenByUser,
+            mbid: mbid
         )
     }
     
@@ -295,15 +348,21 @@ struct ScrobbleTools {
         let artist = "\(artistValue)"
         let track = "\(trackValue)"
         let album = arguments.getString(for: "album")
-        let duration = arguments.getInt(for: "duration")
         let trackNumber = arguments.getInt(for: "track_number")
+        let context = arguments.getString(for: "context")
+        let mbid = arguments.getString(for: "mbid")
+        let duration = arguments.getInt(for: "duration")
+        let albumArtist = arguments.getString(for: "album_artist")
         
         return UpdateNowPlayingInput(
             artist: artist,
             track: track,
             album: album,
+            trackNumber: trackNumber,
+            context: context,
+            mbid: mbid,
             duration: duration,
-            trackNumber: trackNumber
+            albumArtist: albumArtist
         )
     }
     
@@ -336,37 +395,4 @@ struct ScrobbleTools {
         
         return UnloveTrackInput(artist: artist, track: track)
     }
-}
-
-// MARK: - Input Models for Scrobble Tools
-
-struct UpdateNowPlayingInput: ToolInput {
-    let artist: String
-    let track: String
-    let album: String?
-    let duration: Int?
-    let trackNumber: Int?
-    
-    static let requiredParameters = ["artist", "track"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "album": "",
-        "duration": 0,
-        "track_number": 0
-    ]
-}
-
-struct LoveTrackInput: ToolInput {
-    let artist: String
-    let track: String
-    
-    static let requiredParameters = ["artist", "track"]
-    static let optionalParameters: [String: (any Sendable)] = [:]
-}
-
-struct UnloveTrackInput: ToolInput {
-    let artist: String
-    let track: String
-    
-    static let requiredParameters = ["artist", "track"]
-    static let optionalParameters: [String: (any Sendable)] = [:]
 }
