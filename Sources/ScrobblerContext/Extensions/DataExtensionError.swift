@@ -18,30 +18,41 @@ extension Dictionary where Key == String, Value == (any Sendable) {
     
     /// Safely extract an integer value for a given key with flexible parsing
     func getInt(for key: String) -> Int? {
-        if let intValue = self[key] as? Int {
+        guard let value = self[key] else { return nil }
+        
+        // Try direct Int cast first
+        if let intValue = value as? Int {
             return intValue
-        } else if let stringValue = self[key] as? String {
+        }
+        
+        // Try String conversion
+        if let stringValue = value as? String {
             return Int(stringValue)
-        } else if let doubleValue = self[key] as? Double, doubleValue.truncatingRemainder(dividingBy: 1) == 0 {
+        }
+        
+        // Try Double conversion (for JSON numbers)
+        if let doubleValue = value as? Double, doubleValue.truncatingRemainder(dividingBy: 1) == 0 {
             return Int(doubleValue)
-        } else if let floatValue = self[key] as? Float, floatValue.truncatingRemainder(dividingBy: 1) == 0 {
+        }
+        
+        // Try Float conversion
+        if let floatValue = value as? Float, floatValue.truncatingRemainder(dividingBy: 1) == 0 {
             return Int(floatValue)
         }
+        
+        // Handle MCP Value type by converting to string first
+        let stringRepresentation = "\(value)"
+        if let intFromString = Int(stringRepresentation) {
+            return intFromString
+        }
+        
         return nil
     }
     
     /// Safely extract an integer with bounds validation
     func getValidatedInt(for key: String, min: Int = Int.min, max: Int = Int.max, default defaultValue: Int? = nil) throws -> Int? {
-        if let value = self[key] {
-            let parsedInt: Int
-            
-            if let intValue = value as? Int {
-                parsedInt = intValue
-            } else if let stringValue = value as? String, let parsed = Int(stringValue) {
-                parsedInt = parsed
-            } else if let doubleValue = value as? Double, doubleValue.truncatingRemainder(dividingBy: 1) == 0 {
-                parsedInt = Int(doubleValue)
-            } else {
+        if self[key] != nil {
+            guard let parsedInt = self.getInt(for: key) else {
                 throw ToolError.invalidParameterType(key, expected: "integer between \(min) and \(max)")
             }
             

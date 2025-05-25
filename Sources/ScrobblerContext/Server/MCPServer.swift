@@ -48,12 +48,12 @@ final class MCPServer: Sendable {
         
         // Validate Last.fm service connection
         try await validateService()
-        
+ 
         // Register handlers
         await registerHandlers()
         
         // Start with stdio transport
-        let transport = StdioTransport()
+        let transport = StdioTransport(logger: logger)
         try await server.start(transport: transport)
         
         logger.info("Server started successfully and listening on stdio")

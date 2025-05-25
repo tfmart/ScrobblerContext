@@ -14,7 +14,7 @@ struct ScrobblerContextMain {
     static var logger: Logger {
         LoggingSystem.bootstrap { label in
             var handler = StreamLogHandler.standardError(label: label)
-            handler.logLevel = .info
+            handler.logLevel = .debug
             return handler
         }
 

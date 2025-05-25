@@ -44,7 +44,7 @@ struct UserTools {
                     "limit": .object([
                         "type": .string("integer"),
                         "description": .string("Maximum number of recent tracks to return (1-200)"),
-                        "default": .int(10),
+                        "default": .int(50),
                         "minimum": .int(1),
                         "maximum": .int(200)
                     ]),
@@ -53,6 +53,19 @@ struct UserTools {
                         "description": .string("Page number for pagination (starts from 1)"),
                         "default": .int(1),
                         "minimum": .int(1)
+                    ]),
+                    "start_date": .object([
+                        "type": .string("integer"),
+                        "description": .string("Unix timestamp for the earliest track to include (optional)")
+                    ]),
+                    "end_date": .object([
+                        "type": .string("integer"),
+                        "description": .string("Unix timestamp for the latest track to include (optional)")
+                    ]),
+                    "extended": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include extended data in the response (optional)"),
+                        "default": .bool(false)
                     ])
                 ]),
                 "required": .array([.string("username")])
@@ -190,7 +203,11 @@ struct UserTools {
         do {
             let recentTracks = try await lastFMService.getUserRecentTracks(
                 user: input.username,
-                limit: input.limit
+                limit: input.limit,
+                page: input.page,
+                startDate: input.startDate,
+                extended: input.extended,
+                endDate: input.endDate
             )
             
             logger.info("Retrieved \(recentTracks.results.count) recent tracks for user: \(input.username)")
@@ -269,13 +286,33 @@ struct UserTools {
         }
         
         let username = "\(usernameValue)"
-        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 200, default: 10) ?? 10
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 200, default: 50) ?? 50
         let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
+        let extended = arguments.getBool(for: "extended") ?? false
+        
+        // Parse start_date and end_date timestamps
+        var startDate: Date?
+        if let startTimestamp = arguments.getInt(for: "start_date") {
+            startDate = Date(timeIntervalSince1970: TimeInterval(startTimestamp))
+        }
+        
+        var endDate: Date?
+        if let endTimestamp = arguments.getInt(for: "end_date") {
+            endDate = Date(timeIntervalSince1970: TimeInterval(endTimestamp))
+        }
+        
+        // Validate that end_date is after start_date if both are provided
+        if let start = startDate, let end = endDate, end <= start {
+            throw ToolError.invalidParameterType("end_date", expected: "timestamp after start_date")
+        }
         
         return GetUserRecentTracksInput(
             username: username,
             limit: limit,
-            page: page
+            page: page,
+            startDate: startDate,
+            extended: extended,
+            endDate: endDate
         )
     }
     

@@ -83,9 +83,34 @@ final class LastFMService: Sendable {
     
     // MARK: - User Services
     
-    func getUserRecentTracks(user: String, limit: Int = 10) async throws -> SBKSearchResult<SBKScrobbledTrack> {
-        logger.info("Getting recent tracks for user: \(user) (limit: \(limit))")
-        return try await manager.getRecentTracks(fromUser: user, limit: limit)
+    func getUserRecentTracks(
+        user: String,
+        limit: Int = 50,
+        page: Int = 1,
+        startDate: Date? = nil,
+        extended: Bool = false,
+        endDate: Date? = nil
+    ) async throws -> SBKSearchResult<SBKScrobbledTrack> {
+        logger.info("Getting recent tracks for user: \(user) (limit: \(limit), page: \(page))")
+        
+        if let startDate = startDate {
+            logger.info("Start date filter: \(startDate)")
+        }
+        if let endDate = endDate {
+            logger.info("End date filter: \(endDate)")
+        }
+        if extended {
+            logger.info("Extended data requested")
+        }
+        
+        return try await manager.getRecentTracks(
+            fromUser: user,
+            limit: limit,
+            page: page,
+            startDate: startDate,
+            extended: extended,
+            endDate: endDate
+        )
     }
     
     func getUserTopArtists(user: String, limit: Int = 10) async throws -> SBKSearchResult<SBKArtist> {

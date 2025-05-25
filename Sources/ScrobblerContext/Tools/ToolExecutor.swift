@@ -135,6 +135,7 @@ struct ToolExecutor {
             try validateRequired(["username"], in: arguments)
             try validateOptionalUserLimit(toolName: tool.rawValue, in: arguments)
             try validateOptionalPage(in: arguments)
+            try validateOptionalTimestamps(in: arguments)
             
         case .getUserTopArtists, .getUserTopTracks:
             try validateRequired(["username"], in: arguments)
@@ -173,6 +174,29 @@ struct ToolExecutor {
         _ = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max)
     }
     
+    private func validateOptionalTimestamps(in arguments: [String: (any Sendable)]) throws {
+        // Validate start_date if provided
+        if let startTimestamp = arguments.getInt(for: "start_date") {
+            guard startTimestamp > 0 else {
+                throw ToolError.invalidParameterType("start_date", expected: "positive Unix timestamp")
+            }
+        }
+        
+        // Validate end_date if provided
+        if let endTimestamp = arguments.getInt(for: "end_date") {
+            guard endTimestamp > 0 else {
+                throw ToolError.invalidParameterType("end_date", expected: "positive Unix timestamp")
+            }
+        }
+        
+        // Validate that end_date is after start_date if both are provided
+        if let startTimestamp = arguments.getInt(for: "start_date"),
+           let endTimestamp = arguments.getInt(for: "end_date"),
+           endTimestamp <= startTimestamp {
+            throw ToolError.invalidParameterType("end_date", expected: "timestamp after start_date")
+        }
+    }
+    
     private func sanitizeArguments(_ arguments: [String: (any Sendable)]) -> [String: (any Sendable)] {
         var sanitized = arguments
         
@@ -194,7 +218,7 @@ struct ToolExecutor {
 extension ToolExecutor {
     
     /// Handle specific Last.fm API errors with appropriate user messages
-    private func handleLastFMError(_ error: Error) -> ToolError {
+    private func handleLastFMError(_ error: MCPError) -> ToolError {
         let errorMessage = error.localizedDescription.lowercased()
         
         if errorMessage.contains("authentication") || errorMessage.contains("unauthorized") {
