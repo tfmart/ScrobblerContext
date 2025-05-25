@@ -21,7 +21,7 @@ FROM swift:5.8-slim
 WORKDIR /app
 
 # Copy the built server from the builder image
-COPY --from=builder /app/.build/release/YourMCPServerExecutable .
+COPY --from=builder /app/.build/release/ScrobblerContext .
 
 # Set environment variables (you can also pass them dynamically at runtime)
 ENV LASTFM_API_KEY=${LASTFM_API_KEY}
