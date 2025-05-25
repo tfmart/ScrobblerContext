@@ -227,7 +227,9 @@ struct UserTools {
         do {
             let topArtists = try await lastFMService.getUserTopArtists(
                 user: input.username,
-                limit: input.limit
+                period: input.period,
+                limit: input.limit,
+                page: input.page
             )
             
             logger.info("Retrieved \(topArtists.results.count) top artists for user: \(input.username) (period: \(input.period))")
@@ -247,7 +249,9 @@ struct UserTools {
         do {
             let topTracks = try await lastFMService.getUserTopTracks(
                 user: input.username,
-                limit: input.limit
+                period: input.period,
+                limit: input.limit,
+                page: input.page
             )
             
             logger.info("Retrieved \(topTracks.results.count) top tracks for user: \(input.username) (period: \(input.period))")
@@ -279,6 +283,14 @@ struct UserTools {
     }
     
     // MARK: - Input Parsing Helpers
+    
+    private func validatePeriod(_ period: String) throws -> String {
+        let validPeriods = ["overall", "7day", "1month", "3month", "6month", "12month"]
+        guard validPeriods.contains(period) else {
+            throw ToolError.invalidParameterType("period", expected: "one of: \(validPeriods.joined(separator: ", "))")
+        }
+        return period
+    }
     
     private func parseGetUserRecentTracksInput(_ arguments: [String: (any Sendable)]) throws -> GetUserRecentTracksInput {
         guard let usernameValue = arguments["username"] else {
@@ -322,15 +334,10 @@ struct UserTools {
         }
         
         let username = "\(usernameValue)"
-        let period = arguments.getString(for: "period") ?? "overall"
+        let periodInput = arguments.getString(for: "period") ?? "overall"
+        let period = try validatePeriod(periodInput)
         let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000, default: 10) ?? 10
         let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
-        
-        // Validate period
-        let validPeriods = ["overall", "7day", "1month", "3month", "6month", "12month"]
-        guard validPeriods.contains(period) else {
-            throw ToolError.invalidParameterType("period", expected: "one of: \(validPeriods.joined(separator: ", "))")
-        }
         
         return GetUserTopArtistsInput(
             username: username,
@@ -346,15 +353,10 @@ struct UserTools {
         }
         
         let username = "\(usernameValue)"
-        let period = arguments.getString(for: "period") ?? "overall"
+        let periodInput = arguments.getString(for: "period") ?? "overall"
+        let period = try validatePeriod(periodInput)
         let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000, default: 10) ?? 10
         let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
-        
-        // Validate period
-        let validPeriods = ["overall", "7day", "1month", "3month", "6month", "12month"]
-        guard validPeriods.contains(period) else {
-            throw ToolError.invalidParameterType("period", expected: "one of: \(validPeriods.joined(separator: ", "))")
-        }
         
         return GetUserTopTracksInput(
             username: username,

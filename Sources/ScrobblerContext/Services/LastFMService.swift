@@ -143,14 +143,44 @@ final class LastFMService: Sendable {
         )
     }
     
-    func getUserTopArtists(user: String, limit: Int = 10) async throws -> SBKSearchResult<SBKArtist> {
-        logger.info("Getting top artists for user: \(user) (limit: \(limit))")
-        return try await manager.getTopArtists(forUser: user, limit: limit)
+    func getUserTopArtists(user: String, period: String = "overall", limit: Int = 10, page: Int = 1) async throws -> SBKSearchResult<SBKArtist> {
+        logger.info("Getting top artists for user: \(user) (period: \(period), limit: \(limit), page: \(page))")
+        
+        // Convert string period to SBKSearchPeriod
+        let searchPeriod = convertStringToPeriod(period)
+        
+        return try await manager.getTopArtists(forUser: user, period: searchPeriod, limit: limit, page: page)
     }
     
-    func getUserTopTracks(user: String, limit: Int = 10) async throws -> SBKSearchResult<SBKTrack> {
-        logger.info("Getting top tracks for user: \(user) (limit: \(limit))")
-        return try await manager.getTopTracks(forUser: user, limit: limit)
+    func getUserTopTracks(user: String, period: String = "overall", limit: Int = 10, page: Int = 1) async throws -> SBKSearchResult<SBKTrack> {
+        logger.info("Getting top tracks for user: \(user) (period: \(period), limit: \(limit), page: \(page))")
+        
+        // Convert string period to SBKSearchPeriod
+        let searchPeriod = convertStringToPeriod(period)
+        
+        return try await manager.getTopTracks(forUser: user, period: searchPeriod, limit: limit, page: page)
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func convertStringToPeriod(_ period: String) -> SBKSearchPeriod {
+        switch period.lowercased() {
+        case "7day", "7days":
+            return .sevenDays
+        case "1month", "1months":
+            return .oneMonth
+        case "3month", "3months":
+            return .threeMonths
+        case "6month", "6months":
+            return .sixMonths
+        case "12month", "12months":
+            return .twelveMonths
+        case "overall":
+            return .overall
+        default:
+            logger.warning("Unknown period '\(period)', defaulting to 'overall'")
+            return .overall
+        }
     }
     
     func getUserInfo(username: String) async throws -> SBKUser {
