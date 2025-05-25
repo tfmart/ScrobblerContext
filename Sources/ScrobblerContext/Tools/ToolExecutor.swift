@@ -103,6 +103,7 @@ struct ToolExecutor {
         case .searchArtist:
             try validateRequired(["query"], in: arguments)
             try validateOptionalLimit(in: arguments)
+            try validateOptionalPage(in: arguments)
             
         case .getArtistInfo:
             try validateRequired(["name"], in: arguments)

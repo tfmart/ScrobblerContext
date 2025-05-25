@@ -46,6 +46,12 @@ struct ArtistTools {
                         "default": .int(10),
                         "minimum": .int(1),
                         "maximum": .int(50)
+                    ]),
+                    "page": .object([
+                        "type": .string("integer"),
+                        "description": .string("Page number for pagination (starts from 1)"),
+                        "default": .int(1),
+                        "minimum": .int(1)
                     ])
                 ]),
                 "required": .array([.string("query")])
@@ -138,16 +144,17 @@ struct ArtistTools {
         do {
             let artists = try await lastFMService.searchArtist(
                 query: input.query,
-                limit: input.limit
+                limit: input.limit,
+                page: input.page
             )
             
-            logger.info("Found \(artists.count) artists for query: \(input.query)")
+            logger.info("Found \(artists.count) artists for query: \(input.query) (page: \(input.page))")
             
             let result = ResponseFormatters.format(artists)
             return ToolResult.success(data: result)
             
         } catch {
-            logger.error("Artist search failed for query '\(input.query)': \(error)")
+            logger.error("Artist search failed for query '\(input.query)' (page: \(input.page)): \(error)")
             return ToolResult.failure(error: "Artist search failed: \(error.localizedDescription)")
         }
     }
@@ -200,10 +207,12 @@ struct ArtistTools {
         
         let query = "\(queryValue)"
         let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
+        let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
         
         return SearchArtistInput(
             query: query,
-            limit: limit
+            limit: limit,
+            page: page
         )
     }
     

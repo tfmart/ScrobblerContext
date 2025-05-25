@@ -33,9 +33,9 @@ final class LastFMService: Sendable {
     
     // MARK: - Artist Services
     
-    func searchArtist(query: String, limit: Int = 10) async throws -> [SBKArtist] {
-        logger.info("Searching for artist: \(query) (limit: \(limit))")
-        return try await manager.search(artist: query, limit: limit)
+    func searchArtist(query: String, limit: Int = 10, page: Int = 1) async throws -> [SBKArtist] {
+        logger.info("Searching for artist: \(query) (limit: \(limit), page: \(page))")
+        return try await manager.search(artist: query, limit: limit, page: page)
     }
     
     func getArtistInfo(name: String) async throws -> SBKArtist {
