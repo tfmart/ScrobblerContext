@@ -11,7 +11,6 @@ import Foundation
 enum ToolName: String, CaseIterable {
     // MARK: - Authentication Tools
     case authenticateBrowser = "authenticate_browser"
-    case authenticateUser = "authenticate_user" // Deprecated
     case setSessionKey = "set_session_key"
     case checkAuthStatus = "check_auth_status"
     case logout = "logout"
@@ -68,7 +67,7 @@ enum ToolName: String, CaseIterable {
     /// The category this tool belongs to
     var category: ToolCategory {
         switch self {
-        case .authenticateBrowser, .authenticateUser, .setSessionKey, .checkAuthStatus, .logout:
+        case .authenticateBrowser, .setSessionKey, .checkAuthStatus, .logout:
             return .authentication
         case .searchArtist, .getArtistInfo, .getSimilarArtists, .addArtistTags, .getArtistCorrection, .getArtistTags, .getArtistTopAlbums, .getArtistTopTracks, .removeArtistTag:
             return .artist
@@ -88,7 +87,7 @@ enum ToolName: String, CaseIterable {
         switch self {
         case .scrobbleTrack, .scrobbleMultipleTracks, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag, .addAlbumTags, .removeAlbumTag, .addTrackTags, .removeTrackTag:
             return true
-        case .authenticateBrowser, .authenticateUser, .setSessionKey, .logout, .checkAuthStatus:
+        case .authenticateBrowser, .setSessionKey, .logout, .checkAuthStatus:
             return false // These tools manage authentication
         default:
             return false // Most read-only tools don't require auth
@@ -97,21 +96,15 @@ enum ToolName: String, CaseIterable {
     
     /// Whether this tool is deprecated
     var isDeprecated: Bool {
-        switch self {
-        case .authenticateUser:
-            return true
-        default:
-            return false
-        }
+        // No deprecated tools since we removed password auth
+        return false
     }
     
     /// Human-readable description of the tool
     var description: String {
         switch self {
         case .authenticateBrowser:
-            return "🔐 Authenticate with Last.fm using secure browser OAuth flow (recommended)"
-        case .authenticateUser:
-            return "⚠️ [DEPRECATED] Authenticate with username/password - use authenticate_browser instead"
+            return "🔐 Authenticate with Last.fm using secure browser OAuth flow"
         case .setSessionKey:
             return "Set an existing Last.fm session key for authentication"
         case .checkAuthStatus:

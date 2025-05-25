@@ -18,214 +18,187 @@ struct ToolExecutor {
         self.toolRegistry = toolRegistry
     }
     
-    // MARK: - Public Interface
+    /// Get all available tools
+    func getAvailableTools() -> [Tool] {
+        return toolRegistry.getAllTools()
+    }
     
-    /// Execute a tool call and return formatted result
+    /// Execute a tool with the given arguments
     func execute(toolName: String, arguments: [String: (any Sendable)]?) async throws -> CallTool.Result {
         let startTime = Date()
-        logger.info("Starting execution of tool: \(toolName)")
-        
-        // Log arguments for debugging (but sanitize sensitive data)
-        let sanitizedArgs = sanitizeArguments(arguments ?? [:])
-        logger.debug("Tool arguments: \(sanitizedArgs)")
+        logger.info("Executing tool: \(toolName)")
         
         do {
-            // Execute the tool
             let result = try await toolRegistry.executeTool(
                 name: toolName,
                 arguments: arguments ?? [:]
             )
             
-            // Convert result to JSON string
-            let jsonResult = try result.toJSON()
-            
-            // Log execution time
             let executionTime = Date().timeIntervalSince(startTime)
             logger.info("Tool \(toolName) completed successfully in \(String(format: "%.3f", executionTime))s")
             
-            // Return MCP result
-            return CallTool.Result(content: [.text(.init(jsonResult))])
-            
-        } catch let toolError as ToolError {
-            logger.error("Tool error in \(toolName): \(toolError.localizedDescription)")
-            
-            let errorResult = ToolResult.failure(error: toolError.localizedDescription)
-            let jsonResult = try errorResult.toJSON()
-            
-            return CallTool.Result(content: [.text(.init(jsonResult))])
+            let jsonString = try result.toJSON()
+            return CallTool.Result(content: [
+                .text(jsonString)
+            ])
             
         } catch {
-            logger.error("Unexpected error in \(toolName): \(error)")
+            let executionTime = Date().timeIntervalSince(startTime)
+            logger.error("Tool \(toolName) failed after \(String(format: "%.3f", executionTime))s: \(error)")
             
-            let errorResult = ToolResult.failure(error: "Internal error: \(error.localizedDescription)")
-            let jsonResult = try errorResult.toJSON()
+            let errorResult = ToolResult.failure(error: error.localizedDescription)
+            let jsonString = try errorResult.toJSON()
             
-            return CallTool.Result(content: [.text(.init(jsonResult))])
+            return CallTool.Result(content: [
+                .text(jsonString)
+            ])
         }
     }
     
-    /// Get list of all available tools
-    func getAvailableTools() -> [Tool] {
-        logger.info("Providing list of available tools")
-        return toolRegistry.getAllTools()
-    }
+    // MARK: - Validation Methods
     
-    /// Get tools for a specific category
-    func getToolsForCategory(_ category: ToolCategory) -> [Tool] {
-        logger.info("Providing tools for category: \(category.description)")
-        return toolRegistry.getToolsForCategory(category)
-    }
-    
-    // MARK: - Validation
-    
-    /// Validate tool arguments against expected schema
+    /// Validate tool arguments before execution
     func validateToolArguments(toolName: String, arguments: [String: (any Sendable)]) throws {
-        logger.debug("Validating arguments for tool: \(toolName)")
-        
-        // Convert string to ToolName enum for type-safe validation
         guard let tool = ToolName(rawValue: toolName) else {
             throw ToolError.lastFMError("Unknown tool: \(toolName)")
         }
         
+        try validateToolArguments(tool: tool, arguments: arguments)
+    }
+    
+    /// Validate tool arguments using ToolName enum
+    func validateToolArguments(tool: ToolName, arguments: [String: (any Sendable)]) throws {
         switch tool {
-        // Authentication tools
-        case .authenticateUser:
-            try validateRequired(["username", "password"], in: arguments)
-            
-        case .setSessionKey:
-            try validateRequired(["session_key"], in: arguments)
-            
-        case .checkAuthStatus, .logout:
-            // No required parameters
-            break
-            
+        // MARK: - Authentication Tools
         case .authenticateBrowser:
             try validateBrowserAuthArguments(arguments)
             
-        // Artist tools
+        case .setSessionKey:
+            try validateSetSessionKeyArguments(arguments)
+            
+        case .checkAuthStatus, .logout:
+            // These tools don't require arguments
+            break
+            
+        // MARK: - Artist Tools
         case .searchArtist:
-            try validateRequired(["query"], in: arguments)
-            try validateOptionalLimit(in: arguments)
-            try validateOptionalPage(in: arguments)
+            try validateSearchArtistArguments(arguments)
             
         case .getArtistInfo:
-            try validateRequired(["name"], in: arguments)
+            try validateGetArtistInfoArguments(arguments)
             
         case .getSimilarArtists:
-            try validateRequired(["name"], in: arguments)
-            try validateOptionalLimit(in: arguments)
+            try validateGetSimilarArtistsArguments(arguments)
             
         case .addArtistTags:
-            try validateRequired(["artist", "tags"], in: arguments)
+            try validateAddArtistTagsArguments(arguments)
             
         case .getArtistCorrection:
-            try validateRequired(["artist"], in: arguments)
+            try validateGetArtistCorrectionArguments(arguments)
             
         case .getArtistTags:
-            try validateRequired(["name"], in: arguments)
+            try validateGetArtistTagsArguments(arguments)
             
-        case .getArtistTopAlbums, .getArtistTopTracks:
-            try validateRequired(["name"], in: arguments)
-            try validateOptionalLimit(in: arguments)
-            try validateOptionalPage(in: arguments)
+        case .getArtistTopAlbums:
+            try validateGetArtistTopAlbumsArguments(arguments)
+            
+        case .getArtistTopTracks:
+            try validateGetArtistTopTracksArguments(arguments)
             
         case .removeArtistTag:
-            try validateRequired(["artist", "tag"], in: arguments)
+            try validateRemoveArtistTagArguments(arguments)
             
-        // Album tools
+        // MARK: - Album Tools
         case .searchAlbum:
-            try validateRequired(["query"], in: arguments)
-            try validateOptionalLimit(in: arguments)
-            try validateOptionalPage(in: arguments)
+            try validateSearchAlbumArguments(arguments)
             
         case .getAlbumInfo:
-            try validateRequired(["album", "artist"], in: arguments)
+            try validateGetAlbumInfoArguments(arguments)
             
         case .addAlbumTags:
-            try validateRequired(["album", "artist", "tags"], in: arguments)
+            try validateAddAlbumTagsArguments(arguments)
             
-        case .getAlbumTags, .getAlbumTopTags:
-            try validateRequired(["album", "artist"], in: arguments)
+        case .getAlbumTags:
+            try validateGetAlbumTagsArguments(arguments)
+            
+        case .getAlbumTopTags:
+            try validateGetAlbumTopTagsArguments(arguments)
             
         case .removeAlbumTag:
-            try validateRequired(["album", "artist", "tag"], in: arguments)
+            try validateRemoveAlbumTagArguments(arguments)
             
-        // Track tools
+        // MARK: - Track Tools
         case .searchTrack:
-            try validateRequired(["query"], in: arguments)
-            try validateOptionalLimit(in: arguments)
-            try validateOptionalPage(in: arguments)
+            try validateSearchTrackArguments(arguments)
             
-        case .getTrackInfo, .getSimilarTracks:
-            try validateRequired(["track", "artist"], in: arguments)
-            if tool == .getSimilarTracks {
-                // Note: limit is optional for getSimilarTracks and can be nil
-                if arguments["limit"] != nil {
-                    _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
-                }
-            }
+        case .getTrackInfo:
+            try validateGetTrackInfoArguments(arguments)
+            
+        case .getSimilarTracks:
+            try validateGetSimilarTracksArguments(arguments)
             
         case .getTrackCorrection:
-            try validateRequired(["track", "artist"], in: arguments)
+            try validateGetTrackCorrectionArguments(arguments)
             
-        case .getTrackTags, .getTrackTopTags:
-            try validateRequired(["track", "artist"], in: arguments)
+        case .getTrackTags:
+            try validateGetTrackTagsArguments(arguments)
+            
+        case .getTrackTopTags:
+            try validateGetTrackTopTagsArguments(arguments)
             
         case .addTrackTags:
-            try validateRequired(["track", "artist", "tags"], in: arguments)
+            try validateAddTrackTagsArguments(arguments)
             
         case .removeTrackTag:
-            try validateRequired(["track", "artist", "tag"], in: arguments)
+            try validateRemoveTrackTagArguments(arguments)
             
-        // User tools
+        // MARK: - User Tools
         case .getUserRecentTracks:
-            try validateRequired(["username"], in: arguments)
-            try validateOptionalUserLimit(toolName: tool.rawValue, in: arguments)
-            try validateOptionalPage(in: arguments)
-            try validateOptionalTimestamps(in: arguments)
+            try validateGetUserRecentTracksArguments(arguments)
             
-        case .getUserTopArtists, .getUserTopTracks:
-            try validateRequired(["username"], in: arguments)
-            try validateOptionalUserLimit(toolName: tool.rawValue, in: arguments)
-            try validateOptionalPage(in: arguments)
+        case .getUserTopArtists:
+            try validateGetUserTopArtistsArguments(arguments)
+            
+        case .getUserTopTracks:
+            try validateGetUserTopTracksArguments(arguments)
             
         case .getUserInfo:
-            try validateRequired(["username"], in: arguments)
+            try validateGetUserInfoArguments(arguments)
             
         case .getUserFriends:
-            try validateRequired(["username"], in: arguments)
-            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
-            try validateOptionalPage(in: arguments)
+            try validateGetUserFriendsArguments(arguments)
             
         case .getUserLovedTracks:
-            try validateRequired(["username"], in: arguments)
-            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
-            try validateOptionalPage(in: arguments)
+            try validateGetUserLovedTracksArguments(arguments)
             
         case .getUserPersonalTagsForArtists:
-            try validateRequired(["username", "tag"], in: arguments)
-            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
-            try validateOptionalPage(in: arguments)
+            try validateGetUserPersonalTagsForArtistsArguments(arguments)
             
         case .getUserTopAlbums:
-            try validateRequired(["username"], in: arguments)
-            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
-            try validateOptionalPage(in: arguments)
+            try validateGetUserTopAlbumsArguments(arguments)
             
         case .getUserTopTags:
-            try validateRequired(["username"], in: arguments)
-            // Note: limit is optional for getUserTopTags and can be nil
+            try validateGetUserTopTagsArguments(arguments)
             
-        // Scrobble tools
-        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack:
-            try validateRequired(["artist", "track"], in: arguments)
+        // MARK: - Scrobble Tools
+        case .scrobbleTrack:
+            try validateScrobbleTrackArguments(arguments)
             
         case .scrobbleMultipleTracks:
-            try validateRequired(["tracks"], in: arguments)
+            try validateScrobbleMultipleTracksArguments(arguments)
+            
+        case .updateNowPlaying:
+            try validateUpdateNowPlayingArguments(arguments)
+            
+        case .loveTrack:
+            try validateLoveTrackArguments(arguments)
+            
+        case .unloveTrack:
+            try validateUnloveTrackArguments(arguments)
         }
     }
     
-    // MARK: - Private Helpers
+    // MARK: - Authentication Validation Methods
     
     private func validateBrowserAuthArguments(_ arguments: [String: (any Sendable)]) throws {
         // Port validation (optional)
@@ -239,82 +212,519 @@ struct ToolExecutor {
         }
     }
     
-    private func validateRequired(_ requiredParams: [String], in arguments: [String: (any Sendable)]) throws {
-        for param in requiredParams {
-            if arguments[param] == nil {
-                throw ToolError.missingParameter(param)
+    private func validateSetSessionKeyArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let sessionKey = arguments.getString(for: "session_key"), !sessionKey.isEmpty else {
+            throw ToolError.missingParameter("session_key")
+        }
+    }
+    
+    // MARK: - Artist Validation Methods
+    
+    private func validateSearchArtistArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let query = arguments.getString(for: "query"), !query.isEmpty else {
+            throw ToolError.missingParameter("query")
+        }
+        
+        // Optional parameters validation
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateGetArtistInfoArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let name = arguments.getString(for: "name"), !name.isEmpty else {
+            throw ToolError.missingParameter("name")
+        }
+    }
+    
+    private func validateGetSimilarArtistsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let name = arguments.getString(for: "name"), !name.isEmpty else {
+            throw ToolError.missingParameter("name")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 100)
+        }
+    }
+    
+    private func validateAddArtistTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tagsValue = arguments["tags"] else {
+            throw ToolError.missingParameter("tags")
+        }
+        
+        // Validate tags array
+        guard let tags = tagsValue as? [String], !tags.isEmpty else {
+            throw ToolError.invalidParameterType("tags", expected: "non-empty array of strings")
+        }
+        
+        // Validate each tag
+        for tag in tags {
+            if tag.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                throw ToolError.invalidParameterType("tags", expected: "array of non-empty strings")
             }
         }
     }
     
-    private func validateOptionalLimit(in arguments: [String: (any Sendable)]) throws {
-        _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
+    private func validateGetArtistCorrectionArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
     }
     
-    private func validateOptionalUserLimit(toolName: String, in arguments: [String: (any Sendable)]) throws {
-        let maxLimit = toolName == ToolName.getUserRecentTracks.rawValue ? 200 : 1000
-        _ = try arguments.getValidatedInt(for: "limit", min: 1, max: maxLimit)
+    private func validateGetArtistTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let name = arguments.getString(for: "name"), !name.isEmpty else {
+            throw ToolError.missingParameter("name")
+        }
     }
     
-    private func validateOptionalPage(in arguments: [String: (any Sendable)]) throws {
-        _ = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max)
+    private func validateGetArtistTopAlbumsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let name = arguments.getString(for: "name"), !name.isEmpty else {
+            throw ToolError.missingParameter("name")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
     }
     
-    private func validateOptionalTimestamps(in arguments: [String: (any Sendable)]) throws {
-        // Validate start_date if provided
-        if let startTimestamp = arguments.getInt(for: "start_date") {
-            guard startTimestamp > 0 else {
-                throw ToolError.invalidParameterType("start_date", expected: "positive Unix timestamp")
+    private func validateGetArtistTopTracksArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let name = arguments.getString(for: "name"), !name.isEmpty else {
+            throw ToolError.missingParameter("name")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateRemoveArtistTagArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tag = arguments.getString(for: "tag"), !tag.isEmpty else {
+            throw ToolError.missingParameter("tag")
+        }
+    }
+    
+    // MARK: - Album Validation Methods
+    
+    private func validateSearchAlbumArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let query = arguments.getString(for: "query"), !query.isEmpty else {
+            throw ToolError.missingParameter("query")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateGetAlbumInfoArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let album = arguments.getString(for: "album"), !album.isEmpty else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+    }
+    
+    private func validateAddAlbumTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let album = arguments.getString(for: "album"), !album.isEmpty else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tagsValue = arguments["tags"] else {
+            throw ToolError.missingParameter("tags")
+        }
+        
+        guard let tags = tagsValue as? [String], !tags.isEmpty else {
+            throw ToolError.invalidParameterType("tags", expected: "non-empty array of strings")
+        }
+    }
+    
+    private func validateGetAlbumTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let album = arguments.getString(for: "album"), !album.isEmpty else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+    }
+    
+    private func validateGetAlbumTopTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let album = arguments.getString(for: "album"), !album.isEmpty else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+    }
+    
+    private func validateRemoveAlbumTagArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let album = arguments.getString(for: "album"), !album.isEmpty else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tag = arguments.getString(for: "tag"), !tag.isEmpty else {
+            throw ToolError.missingParameter("tag")
+        }
+    }
+    
+    // MARK: - Track Validation Methods
+    
+    private func validateSearchTrackArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let query = arguments.getString(for: "query"), !query.isEmpty else {
+            throw ToolError.missingParameter("query")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateGetTrackInfoArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+    }
+    
+    private func validateGetSimilarTracksArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 100)
+        }
+    }
+    
+    private func validateGetTrackCorrectionArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+    }
+    
+    private func validateGetTrackTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+    }
+    
+    private func validateGetTrackTopTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+    }
+    
+    private func validateAddTrackTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tagsValue = arguments["tags"] else {
+            throw ToolError.missingParameter("tags")
+        }
+        
+        guard let tags = tagsValue as? [String], !tags.isEmpty else {
+            throw ToolError.invalidParameterType("tags", expected: "non-empty array of strings")
+        }
+    }
+    
+    private func validateRemoveTrackTagArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tag = arguments.getString(for: "tag"), !tag.isEmpty else {
+            throw ToolError.missingParameter("tag")
+        }
+    }
+    
+    // MARK: - User Validation Methods
+    
+    private func validateGetUserRecentTracksArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateGetUserTopArtistsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+        
+        // Validate period if provided
+        if let period = arguments.getString(for: "period") {
+            let validPeriods = ["7day", "7days", "1month", "3month", "6month", "12month", "overall"]
+            if !validPeriods.contains(period.lowercased()) {
+                throw ToolError.invalidParameterType("period", expected: "one of: \(validPeriods.joined(separator: ", "))")
             }
         }
-        
-        // Validate end_date if provided
-        if let endTimestamp = arguments.getInt(for: "end_date") {
-            guard endTimestamp > 0 else {
-                throw ToolError.invalidParameterType("end_date", expected: "positive Unix timestamp")
-            }
+    }
+    
+    private func validateGetUserTopTracksArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
         }
         
-        // Validate that end_date is after start_date if both are provided
-        if let startTimestamp = arguments.getInt(for: "start_date"),
-           let endTimestamp = arguments.getInt(for: "end_date"),
-           endTimestamp <= startTimestamp {
-            throw ToolError.invalidParameterType("end_date", expected: "timestamp after start_date")
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+        
+        // Validate period if provided
+        if let period = arguments.getString(for: "period") {
+            let validPeriods = ["7day", "7days", "1month", "3month", "6month", "12month", "overall"]
+            if !validPeriods.contains(period.lowercased()) {
+                throw ToolError.invalidParameterType("period", expected: "one of: \(validPeriods.joined(separator: ", "))")
+            }
         }
     }
     
-    private func sanitizeArguments(_ arguments: [String: (any Sendable)]) -> [String: (any Sendable)] {
-        var sanitized = arguments
-        
-        // Remove or mask sensitive fields
-        let sensitiveKeys = ["password", "session_key", "api_key", "secret"]
-        
-        for key in sensitiveKeys {
-            if sanitized[key] != nil {
-                sanitized[key] = "***REDACTED***"
-            }
+    private func validateGetUserInfoArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let username = arguments.getString(for: "username"), !username.isEmpty else {
+            throw ToolError.missingParameter("username")
+        }
+    }
+    
+    private func validateGetUserFriendsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
         }
         
-        return sanitized
-    }
-}
-
-// MARK: - Error Handling Extensions
-
-extension ToolExecutor {
-    
-    /// Handle specific Last.fm API errors with appropriate user messages
-    private func handleLastFMError(_ error: MCPError) -> ToolError {
-        let errorMessage = error.localizedDescription.lowercased()
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
         
-        if errorMessage.contains("authentication") || errorMessage.contains("unauthorized") {
-            return .authenticationRequired
-        } else if errorMessage.contains("not found") {
-            return .lastFMError("Resource not found")
-        } else if errorMessage.contains("rate limit") {
-            return .lastFMError("Rate limit exceeded. Please try again later.")
-        } else {
-            return .lastFMError(error.localizedDescription)
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateGetUserLovedTracksArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateGetUserPersonalTagsForArtistsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
+        }
+        
+        guard let tag = arguments.getString(for: "tag"), !tag.isEmpty else {
+            throw ToolError.missingParameter("tag")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+    }
+    
+    private func validateGetUserTopAlbumsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+        }
+        
+        if let _ = arguments["page"] {
+            _ = try arguments.getValidatedInt(for: "page", min: 1)
+        }
+        
+        // Validate period if provided
+        if let period = arguments.getString(for: "period") {
+            let validPeriods = ["7day", "7days", "1month", "3month", "6month", "12month", "overall"]
+            if !validPeriods.contains(period.lowercased()) {
+                throw ToolError.invalidParameterType("period", expected: "one of: \(validPeriods.joined(separator: ", "))")
+            }
+        }
+    }
+    
+    private func validateGetUserTopTagsArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let user = arguments.getString(for: "user"), !user.isEmpty else {
+            throw ToolError.missingParameter("user")
+        }
+        
+        if let _ = arguments["limit"] {
+            _ = try arguments.getValidatedInt(for: "limit", min: 1)
+        }
+    }
+    
+    // MARK: - Scrobble Validation Methods
+    
+    private func validateScrobbleTrackArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        // Optional validations
+        if let _ = arguments["track_number"] {
+            _ = try arguments.getValidatedInt(for: "track_number", min: 1)
+        }
+        
+        if let _ = arguments["duration"] {
+            _ = try arguments.getValidatedInt(for: "duration", min: 1)
+        }
+    }
+    
+    private func validateScrobbleMultipleTracksArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let tracksValue = arguments["tracks"] else {
+            throw ToolError.missingParameter("tracks")
+        }
+        
+        guard let tracks = tracksValue as? [[String: Any]], !tracks.isEmpty else {
+            throw ToolError.invalidParameterType("tracks", expected: "non-empty array of track objects")
+        }
+        
+        // Validate each track object
+        for (index, track) in tracks.enumerated() {
+            guard let artist = track["artist"] as? String, !artist.isEmpty else {
+                throw ToolError.invalidParameterType("tracks[\(index)].artist", expected: "non-empty string")
+            }
+            
+            guard let trackName = track["track"] as? String, !trackName.isEmpty else {
+                throw ToolError.invalidParameterType("tracks[\(index)].track", expected: "non-empty string")
+            }
+        }
+    }
+    
+    private func validateUpdateNowPlayingArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+        
+        // Optional validations
+        if let _ = arguments["track_number"] {
+            _ = try arguments.getValidatedInt(for: "track_number", min: 1)
+        }
+        
+        if let _ = arguments["duration"] {
+            _ = try arguments.getValidatedInt(for: "duration", min: 1)
+        }
+    }
+    
+    private func validateLoveTrackArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
+        }
+    }
+    
+    private func validateUnloveTrackArguments(_ arguments: [String: (any Sendable)]) throws {
+        guard let artist = arguments.getString(for: "artist"), !artist.isEmpty else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let track = arguments.getString(for: "track"), !track.isEmpty else {
+            throw ToolError.missingParameter("track")
         }
     }
 }

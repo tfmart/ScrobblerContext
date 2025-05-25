@@ -76,35 +76,17 @@ final class LastFMService: Sendable {
         }
     }
     
+    /// Get current authenticated username
+    func getCurrentUsername() async -> String? {
+        guard await isAuthenticated() else { return nil }
+        return await sessionManager.getUsername()
+    }
+    
     /// Clear current session
     func clearSession() async {
         await sessionManager.clearSession()
         manager.signOut()
         logger.info("Session cleared")
-    }
-    
-    /// Legacy password authentication (deprecated but kept for backward compatibility)
-    func authenticate(username: String, password: String) async throws -> SBKSessionResponseInfo {
-        logger.warning("Using deprecated password authentication - please migrate to browser OAuth")
-        
-        do {
-            let session = try await manager.startSession(username: username, password: password)
-            
-            // Store session info
-            await sessionManager.setSessionKey(session.key)
-            await sessionManager.setUsername(session.name)
-            
-            logger.info("Successfully authenticated as \(session.name) via password")
-            return session
-        } catch {
-            logger.error("Password authentication failed: \(error)")
-            throw ToolError.authenticationFailed("Authentication failed: \(error.localizedDescription)")
-        }
-    }
-    
-    func getCurrentUsername() async -> String? {
-        let username = try? await getUserInfo(username: nil).username
-        return username
     }
     
     // MARK: - OAuth Helper Methods
@@ -438,8 +420,8 @@ final class LastFMService: Sendable {
         }
     }
     
-    func getUserInfo(username: String?) async throws -> SBKUser {
-        logger.info("Getting user info for: \(username ?? "authenticated user")")
+    func getUserInfo(username: String) async throws -> SBKUser {
+        logger.info("Getting user info for: \(username)")
         return try await manager.getInfo(forUser: username)
     }
     
@@ -612,34 +594,5 @@ final class LastFMService: Sendable {
             logger.error("Service validation failed: \(error)")
             throw ToolError.lastFMError("Failed to connect to Last.fm service: \(error.localizedDescription)")
         }
-    }
-}
-
-// MARK: - Session Manager Actor
-
-/// Thread-safe session management using Actor
-actor SessionManager {
-    private var sessionKey: String?
-    private var username: String?
-    
-    func setSessionKey(_ key: String) {
-        self.sessionKey = key
-    }
-    
-    func getSessionKey() -> String? {
-        return sessionKey
-    }
-    
-    func setUsername(_ name: String) {
-        self.username = name
-    }
-    
-    func getUsername() -> String? {
-        return username
-    }
-    
-    func clearSession() {
-        sessionKey = nil
-        username = nil
     }
 }

@@ -31,8 +31,7 @@ struct AuthTools {
             createBrowserAuthTool(),
             createSetSessionKeyTool(),
             createCheckAuthStatusTool(),
-            createLogoutTool(),
-            createLegacyAuthTool() // Keep for backward compatibility
+            createLogoutTool()
         ]
     }
     
@@ -102,27 +101,6 @@ struct AuthTools {
         )
     }
     
-    private static func createLegacyAuthTool() -> Tool {
-        return Tool(
-            name: "authenticate_user",
-            description: "⚠️ [DEPRECATED] Authenticate with username/password - use authenticate_browser instead",
-            inputSchema: .object([
-                "type": .string("object"),
-                "properties": .object([
-                    "username": .object([
-                        "type": .string("string"),
-                        "description": .string("Last.fm username")
-                    ]),
-                    "password": .object([
-                        "type": .string("string"),
-                        "description": .string("Last.fm password")
-                    ])
-                ]),
-                "required": .array([.string("username"), .string("password")])
-            ])
-        )
-    }
-    
     // MARK: - Tool Execution
     
     func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
@@ -137,8 +115,6 @@ struct AuthTools {
             return try await executeCheckAuthStatus(arguments: arguments)
         case .logout:
             return try await executeLogout(arguments: arguments)
-        case .authenticateUser:
-            return try await executeLegacyAuth(arguments: arguments)
         default:
             throw ToolError.lastFMError("Unknown authentication tool: \(toolName)")
         }
@@ -298,36 +274,6 @@ struct AuthTools {
         return ToolResult.success(data: result)
     }
     
-    private func executeLegacyAuth(arguments: [String: (any Sendable)]) async throws -> ToolResult {
-        logger.warning("Using deprecated password authentication - please migrate to 'authenticate_browser'")
-        
-        let input = try parseAuthenticateInput(arguments)
-        
-        do {
-            let sessionInfo = try await lastFMService.authenticate(
-                username: input.username,
-                password: input.password
-            )
-            
-            logger.info("Successfully authenticated user via password: \(input.username)")
-            
-            var result = ResponseFormatters.formatAuthenticationResult(
-                true,
-                username: sessionInfo.name
-            )
-            
-            // Add deprecation warning
-            result["warning"] = "Password authentication is deprecated. Please use 'authenticate_browser' for better security."
-            result["method"] = "password_deprecated"
-            
-            return ToolResult.success(data: result)
-            
-        } catch {
-            logger.error("Password authentication failed for user \(input.username): \(error)")
-            return ToolResult.failure(error: "Authentication failed: \(error.localizedDescription)")
-        }
-    }
-    
     // MARK: - Helper Methods
     
     private func generateAuthURL(callbackURL: String, state: String) -> String {
@@ -386,21 +332,6 @@ struct AuthTools {
             group.cancelAll()
             return result
         }
-    }
-    
-    private func parseAuthenticateInput(_ arguments: [String: (any Sendable)]) throws -> AuthenticateInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
-        }
-        
-        guard let passwordValue = arguments["password"] else {
-            throw ToolError.missingParameter("password")
-        }
-        
-        return AuthenticateInput(
-            username: "\(usernameValue)",
-            password: "\(passwordValue)"
-        )
     }
 }
 
