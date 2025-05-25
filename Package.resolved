@@ -1,5 +1,5 @@
 {
-  "originHash" : "523770da87194fbd833dc57ba0026fe01700f733a647be85e1efd0f1b182ac9d",
+  "originHash" : "02cf802940e8ee0be8234ecb9212ed0bde963c0a8eba31989155def6c006b836",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tfmart/ScrobbleKit",
       "state" : {
-        "revision" : "e12df14677589e29919352e47a0c500cc2e81fde",
-        "version" : "1.1.1"
+        "branch" : "sendable",
+        "revision" : "e6bd3a0e922ac6be81098fe501fe20adf73f385d"
       }
     },
     {
