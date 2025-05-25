@@ -10,9 +10,11 @@ import Foundation
 /// Enum representing all available tool names in the Last.fm MCP Server
 enum ToolName: String, CaseIterable {
     // MARK: - Authentication Tools
-    case authenticateUser = "authenticate_user"
+    case authenticateBrowser = "authenticate_browser"
+    case authenticateUser = "authenticate_user" // Deprecated
     case setSessionKey = "set_session_key"
     case checkAuthStatus = "check_auth_status"
+    case logout = "logout"
     
     // MARK: - Artist Tools
     case searchArtist = "search_artist"
@@ -66,7 +68,7 @@ enum ToolName: String, CaseIterable {
     /// The category this tool belongs to
     var category: ToolCategory {
         switch self {
-        case .authenticateUser, .setSessionKey, .checkAuthStatus:
+        case .authenticateBrowser, .authenticateUser, .setSessionKey, .checkAuthStatus, .logout:
             return .authentication
         case .searchArtist, .getArtistInfo, .getSimilarArtists, .addArtistTags, .getArtistCorrection, .getArtistTags, .getArtistTopAlbums, .getArtistTopTracks, .removeArtistTag:
             return .artist
@@ -86,22 +88,36 @@ enum ToolName: String, CaseIterable {
         switch self {
         case .scrobbleTrack, .scrobbleMultipleTracks, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag, .addAlbumTags, .removeAlbumTag, .addTrackTags, .removeTrackTag:
             return true
-        case .setSessionKey, .authenticateUser:
-            return false // These tools establish authentication
+        case .authenticateBrowser, .authenticateUser, .setSessionKey, .logout, .checkAuthStatus:
+            return false // These tools manage authentication
         default:
             return false // Most read-only tools don't require auth
+        }
+    }
+    
+    /// Whether this tool is deprecated
+    var isDeprecated: Bool {
+        switch self {
+        case .authenticateUser:
+            return true
+        default:
+            return false
         }
     }
     
     /// Human-readable description of the tool
     var description: String {
         switch self {
+        case .authenticateBrowser:
+            return "🔐 Authenticate with Last.fm using secure browser OAuth flow (recommended)"
         case .authenticateUser:
-            return "Authenticate with Last.fm using username and password"
+            return "⚠️ [DEPRECATED] Authenticate with username/password - use authenticate_browser instead"
         case .setSessionKey:
             return "Set an existing Last.fm session key for authentication"
         case .checkAuthStatus:
-            return "Check if the user is currently authenticated with Last.fm"
+            return "Check current authentication status with Last.fm"
+        case .logout:
+            return "Clear authentication session and logout from Last.fm"
         case .searchArtist:
             return "Search for artists on Last.fm by name"
         case .getArtistInfo:
@@ -194,5 +210,15 @@ enum ToolName: String, CaseIterable {
     /// Get all tools that don't require authentication
     static var publicTools: [ToolName] {
         return allCases.filter { !$0.requiresAuthentication }
+    }
+    
+    /// Get all deprecated tools
+    static var deprecatedTools: [ToolName] {
+        return allCases.filter { $0.isDeprecated }
+    }
+    
+    /// Get all current (non-deprecated) tools
+    static var currentTools: [ToolName] {
+        return allCases.filter { !$0.isDeprecated }
     }
 }

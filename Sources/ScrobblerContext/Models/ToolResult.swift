@@ -7,12 +7,12 @@
 
 import Foundation
 
-struct ToolResult {
+struct ToolResult: Sendable {
     let success: Bool
-    let data: [String: Any]?
+    let data: [String: (any Sendable)]?
     let error: String?
     
-    static func success(data: [String: Any]) -> ToolResult {
+    static func success(data: [String: (any Sendable)]) -> ToolResult {
         return ToolResult(success: true, data: data, error: nil)
     }
     
@@ -21,7 +21,7 @@ struct ToolResult {
     }
     
     func toJSON() throws -> String {
-        var result: [String: Any] = ["success": success]
+        var result: [String: (any Sendable)] = ["success": success]
         
         if let data = data {
             result.merge(data) { _, new in new }

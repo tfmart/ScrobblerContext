@@ -14,17 +14,17 @@ let package = Package(
             targets: ["ScrobblerContext"]),
     ],
     dependencies: [
-        // MCP SDK dependency
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk", from: "0.7.1"),
-        // ScrobbleKit dependency
-        .package(url: "https://github.com/tfmart/ScrobbleKit", from: "1.1.0")
+        .package(url: "https://github.com/tfmart/ScrobbleKit", from: "1.1.0"),
+        .package(url: "https://github.com/httpswift/swifter.git", from: "1.5.0")
     ],
     targets: [
         .executableTarget(
             name: "ScrobblerContext",
             dependencies: [
                 .product(name: "MCP", package: "swift-sdk"),
-                .product(name: "ScrobbleKit", package: "ScrobbleKit")
+                .product(name: "ScrobbleKit", package: "ScrobbleKit"),
+                .product(name: "Swifter", package: "Swifter")
             ]),
     ]
 )

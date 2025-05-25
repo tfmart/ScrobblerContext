@@ -95,9 +95,12 @@ struct ToolExecutor {
         case .setSessionKey:
             try validateRequired(["session_key"], in: arguments)
             
-        case .checkAuthStatus:
+        case .checkAuthStatus, .logout:
             // No required parameters
             break
+            
+        case .authenticateBrowser:
+            try validateBrowserAuthArguments(arguments)
             
         // Artist tools
         case .searchArtist:
@@ -224,6 +227,18 @@ struct ToolExecutor {
     
     // MARK: - Private Helpers
     
+    private func validateBrowserAuthArguments(_ arguments: [String: (any Sendable)]) throws {
+        // Port validation (optional)
+        if let _ = arguments["port"] {
+            _ = try arguments.getValidatedInt(for: "port", min: 1024, max: 65535)
+        }
+        
+        // auto_open validation (optional boolean)
+        if let _ = arguments["auto_open"] {
+            _ = arguments.getBool(for: "auto_open")
+        }
+    }
+    
     private func validateRequired(_ requiredParams: [String], in arguments: [String: (any Sendable)]) throws {
         for param in requiredParams {
             if arguments[param] == nil {
@@ -301,19 +316,5 @@ extension ToolExecutor {
         } else {
             return .lastFMError(error.localizedDescription)
         }
-    }
-}
-
-// MARK: - Performance Monitoring
-
-extension ToolExecutor {
-    
-    /// Monitor tool execution performance
-    private func logPerformanceMetrics(toolName: String, executionTime: TimeInterval, success: Bool) {
-        let status = success ? "SUCCESS" : "FAILURE"
-        logger.info("METRICS: \(toolName) | \(status) | \(String(format: "%.3f", executionTime))s")
-        
-        // In a production environment, you might want to send these metrics
-        // to a monitoring service like CloudWatch, DataDog, etc.
     }
 }

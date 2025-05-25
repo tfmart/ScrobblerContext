@@ -13,13 +13,13 @@ struct ResponseFormatters {
     
     // MARK: - Artist Formatters
     
-    static func format(_ artists: [SBKArtist]) -> [String: Any] {
+    static func format(_ artists: [SBKArtist]) -> [String: (any Sendable)] {
         let formattedArtists = artists.map(format)
         return ["artists": formattedArtists]
     }
     
-    static func format(_ artist: SBKArtist) -> [String: Any] {
-        var result: [String: Any] = [
+    static func format(_ artist: SBKArtist) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = [
             "name": artist.name,
             "url": artist.url?.absoluteString ?? ""
         ]
@@ -55,8 +55,8 @@ struct ResponseFormatters {
         return result
     }
     
-    static func format(_ similarArtists: [SBKSimilarArtist]) -> [String: Any] {
-        let formattedArtists = similarArtists.map { similarArtist -> [String: Any] in
+    static func format(_ similarArtists: [SBKSimilarArtist]) -> [String: (any Sendable)] {
+        let formattedArtists = similarArtists.map { similarArtist -> [String: (any Sendable)] in
             var artistDict = format(similarArtist.artist)
             
             if let match = similarArtist.match {
@@ -71,13 +71,13 @@ struct ResponseFormatters {
     
     // MARK: - Album Formatters
     
-    static func format(_ albums: [SBKAlbum]) -> [String: Any] {
+    static func format(_ albums: [SBKAlbum]) -> [String: (any Sendable)] {
         let formattedAlbums = albums.map(format)
         return ["albums": formattedAlbums]
     }
     
-    static func format(_ album: SBKAlbum) -> [String: Any] {
-        var result: [String: Any] = [
+    static func format(_ album: SBKAlbum) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = [
             "name": album.name,
             "artist": album.artist,
             "url": album.url?.absoluteString ?? ""
@@ -100,8 +100,8 @@ struct ResponseFormatters {
         }
         
         if !album.tracklist.isEmpty {
-            result["tracks"] = album.tracklist.map { track -> [String: Any] in
-                var trackDict: [String: Any] = [
+            result["tracks"] = album.tracklist.map { track -> [String: (any Sendable)] in
+                var trackDict: [String: (any Sendable)] = [
                     "name": track.name,
                     "artist": track.artist.name
                 ]
@@ -131,13 +131,13 @@ struct ResponseFormatters {
     
     // MARK: - Track Formatters
     
-    static func format(_ tracks: [SBKTrack]) -> [String: Any] {
+    static func format(_ tracks: [SBKTrack]) -> [String: (any Sendable)] {
         let formattedTracks = tracks.map(format)
         return ["tracks": formattedTracks]
     }
     
-    static func formatSimilarTracks(_ similarTracks: [SBKSimilarTrack]) -> [String: Any] {
-        let formattedTracks = similarTracks.map { similarTrack -> [String: Any] in
+    static func formatSimilarTracks(_ similarTracks: [SBKSimilarTrack]) -> [String: (any Sendable)] {
+        let formattedTracks = similarTracks.map { similarTrack -> [String: (any Sendable)] in
             var trackDict = format(similarTrack.track)
             
             if let match = similarTrack.match {
@@ -150,8 +150,8 @@ struct ResponseFormatters {
         return ["similar_tracks": formattedTracks]
     }
     
-    static func format(_ track: SBKTrack) -> [String: Any] {
-        var result: [String: Any] = [
+    static func format(_ track: SBKTrack) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = [
             "name": track.name,
             "artist": track.artist.name,
             "url": track.url?.absoluteString ?? ""
@@ -182,9 +182,9 @@ struct ResponseFormatters {
     
     // MARK: - Tag Formatters
     
-    static func format(_ tags: [SBKTag]) -> [String: Any] {
-        let formattedTags = tags.map { tag -> [String: Any] in
-            var tagDict: [String: Any] = [
+    static func format(_ tags: [SBKTag]) -> [String: (any Sendable)] {
+        let formattedTags = tags.map { tag -> [String: (any Sendable)] in
+            var tagDict: [String: (any Sendable)] = [
                 "name": tag.name,
                 "url": tag.url?.absoluteString ?? ""
             ]
@@ -201,7 +201,7 @@ struct ResponseFormatters {
     
     // MARK: - Artist Correction Formatters
     
-    static func formatArtistCorrection(_ artist: SBKArtist?) -> [String: Any] {
+    static func formatArtistCorrection(_ artist: SBKArtist?) -> [String: (any Sendable)] {
         if let correctedArtist = artist {
             return [
                 "corrected": true,
@@ -217,7 +217,7 @@ struct ResponseFormatters {
     
     // MARK: - Track Correction Formatters
     
-    static func formatTrackCorrection(_ track: SBKTrack?) -> [String: Any] {
+    static func formatTrackCorrection(_ track: SBKTrack?) -> [String: (any Sendable)] {
         if let correctedTrack = track {
             return [
                 "corrected": true,
@@ -233,8 +233,8 @@ struct ResponseFormatters {
     
     // MARK: - Tag Operation Result Formatters
     
-    static func formatTagOperationResult(success: Bool, operation: String, artist: String, tags: [String]? = nil, tag: String? = nil) -> [String: Any] {
-        var result: [String: Any] = [
+    static func formatTagOperationResult(success: Bool, operation: String, artist: String, tags: [String]? = nil, tag: String? = nil) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = [
             "success": success,
             "operation": operation,
             "artist": artist,
@@ -254,8 +254,8 @@ struct ResponseFormatters {
     
     // MARK: - User Data Formatters
     
-    static func format(_ recentTracks: SBKSearchResult<SBKScrobbledTrack>) -> [String: Any] {
-        let formattedTracks = recentTracks.results.map { scrobbledTrack -> [String: Any] in
+    static func format(_ recentTracks: SBKSearchResult<SBKScrobbledTrack>) -> [String: (any Sendable)] {
+        let formattedTracks = recentTracks.results.map { scrobbledTrack -> [String: (any Sendable)] in
             var trackDict = format(scrobbledTrack.track)
             
             if let date = scrobbledTrack.date {
@@ -272,7 +272,7 @@ struct ResponseFormatters {
         ]
     }
     
-    static func format(_ topArtists: SBKSearchResult<SBKArtist>) -> [String: Any] {
+    static func format(_ topArtists: SBKSearchResult<SBKArtist>) -> [String: (any Sendable)] {
         let formattedArtists = topArtists.results.map(format)
         
         return [
@@ -281,7 +281,7 @@ struct ResponseFormatters {
         ]
     }
     
-    static func format(_ topTracks: SBKSearchResult<SBKTrack>) -> [String: Any] {
+    static func format(_ topTracks: SBKSearchResult<SBKTrack>) -> [String: (any Sendable)] {
         let formattedTracks = topTracks.results.map(format)
         
         return [
@@ -290,13 +290,13 @@ struct ResponseFormatters {
         ]
     }
     
-    static func format(_ users: [SBKUser]) -> [String: Any] {
+    static func format(_ users: [SBKUser]) -> [String: (any Sendable)] {
         let formattedUsers = users.map(formatUserInfo)
         return ["friends": formattedUsers]
     }
     
-    static func format(_ lovedTracks: SBKLovedTracks) -> [String: Any] {
-        let formattedTracks = lovedTracks.tracks.map { lovedTrack -> [String: Any] in
+    static func format(_ lovedTracks: SBKLovedTracks) -> [String: (any Sendable)] {
+        let formattedTracks = lovedTracks.tracks.map { lovedTrack -> [String: (any Sendable)] in
             var trackDict = format(lovedTrack.track)
             
             if let date = lovedTrack.date {
@@ -318,7 +318,7 @@ struct ResponseFormatters {
         ]
     }
     
-    static func format(_ topAlbums: SBKSearchResult<SBKAlbum>) -> [String: Any] {
+    static func format(_ topAlbums: SBKSearchResult<SBKAlbum>) -> [String: (any Sendable)] {
         let formattedAlbums = topAlbums.results.map(format)
         
         return [
@@ -327,9 +327,9 @@ struct ResponseFormatters {
         ]
     }
     
-    static func format(_ topTags: SBKSearchResult<SBKTag>) -> [String: Any] {
-        let formattedTags = topTags.results.map { tag -> [String: Any] in
-            var tagDict: [String: Any] = [
+    static func format(_ topTags: SBKSearchResult<SBKTag>) -> [String: (any Sendable)] {
+        let formattedTags = topTags.results.map { tag -> [String: (any Sendable)] in
+            var tagDict: [String: (any Sendable)] = [
                 "name": tag.name,
                 "url": tag.url?.absoluteString ?? ""
             ]
@@ -349,7 +349,7 @@ struct ResponseFormatters {
     
     // MARK: - Helper Methods
     
-    private static func formatSearchMetadata<T>(_ searchResult: SBKSearchResult<T>) -> [String: Any] {
+    private static func formatSearchMetadata<T>(_ searchResult: SBKSearchResult<T>) -> [String: (any Sendable)] {
         return [
             "page": searchResult.page,
             "per_page": searchResult.perPage,
@@ -360,15 +360,15 @@ struct ResponseFormatters {
     
     // MARK: - Scrobble Result Formatters
     
-    static func format(_ scrobbleSuccess: Bool) -> [String: Any] {
+    static func format(_ scrobbleSuccess: Bool) -> [String: (any Sendable)] {
         return [
             "scrobbled": scrobbleSuccess,
             "timestamp": Date().timeIntervalSince1970
         ]
     }
     
-    static func formatScrobbleResult(success: Bool, artist: String, track: String, album: String? = nil) -> [String: Any] {
-        var result: [String: Any] = [
+    static func formatScrobbleResult(success: Bool, artist: String, track: String, album: String? = nil) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = [
             "scrobbled": success,
             "artist": artist,
             "track": track,
@@ -382,9 +382,9 @@ struct ResponseFormatters {
         return result
     }
     
-    static func formatMultipleScrobbleResult(_ response: SBKScrobbleResponse) -> [String: Any] {
-        let scrobbleResults = response.results.map { scrobble -> [String: Any] in
-            var scrobbleDict: [String: Any] = [
+    static func formatMultipleScrobbleResult(_ response: SBKScrobbleResponse) -> [String: (any Sendable)] {
+        let scrobbleResults = response.results.map { scrobble -> [String: (any Sendable)] in
+            var scrobbleDict: [String: (any Sendable)] = [
                 "artist": scrobble.track.artist,
                 "track": scrobble.track.track,
                 "successful": scrobble.isAccepted
@@ -418,8 +418,8 @@ struct ResponseFormatters {
         ]
     }
     
-    static func formatNowPlayingResult(success: Bool, artist: String, track: String, album: String? = nil) -> [String: Any] {
-        var result: [String: Any] = [
+    static func formatNowPlayingResult(success: Bool, artist: String, track: String, album: String? = nil) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = [
             "now_playing_updated": success,
             "artist": artist,
             "track": track,
@@ -433,7 +433,7 @@ struct ResponseFormatters {
         return result
     }
     
-    static func formatLoveResult(loved: Bool, artist: String, track: String) -> [String: Any] {
+    static func formatLoveResult(loved: Bool, artist: String, track: String) -> [String: (any Sendable)] {
         return [
             "loved": loved,
             "artist": artist,
@@ -445,8 +445,8 @@ struct ResponseFormatters {
     
     // MARK: - Authentication Result Formatters
     
-    static func formatAuthenticationResult(_ success: Bool, username: String? = nil) -> [String: Any] {
-        var result: [String: Any] = ["authenticated": success]
+    static func formatAuthenticationResult(_ success: Bool, username: String? = nil) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = ["authenticated": success]
         
         if let username = username {
             result["username"] = username
@@ -459,8 +459,8 @@ struct ResponseFormatters {
     
     // MARK: - User Info Formatters
     
-    static func formatUserInfo(_ user: SBKUser) -> [String: Any] {
-        var result: [String: Any] = [
+    static func formatUserInfo(_ user: SBKUser) -> [String: (any Sendable)] {
+        var result: [String: (any Sendable)] = [
             "username": user.username,
             "url": user.url,
             "playcount": user.playcount,

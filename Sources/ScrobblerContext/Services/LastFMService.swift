@@ -10,25 +10,175 @@ import MCP
 @preconcurrency import ScrobbleKit
 import Logging
 
-/// Core service wrapper for ScrobbleKit
+/// Core service wrapper for ScrobbleKit with enhanced authentication
 final class LastFMService: Sendable {
     let manager: SBKManager
     let logger = Logger(label: "com.lastfm.mcp-server.service")
     
+    // Store API credentials for OAuth flow
+    private let apiKey: String
+    private let secretKey: String
+    
+    // Session management - using actor for thread safety
+    private let sessionManager = SessionManager()
+    
     init(apiKey: String, secretKey: String) {
+        self.apiKey = apiKey
+        self.secretKey = secretKey
         self.manager = SBKManager(apiKey: apiKey, secret: secretKey)
         logger.info("LastFM service initialized")
     }
     
+    // MARK: - Public API Access
+    
+    /// Get API key for OAuth URL generation
+    func getAPIKey() -> String {
+        return apiKey
+    }
+    
+    // MARK: - Enhanced Authentication Methods
+    
+    /// Set session key directly (for OAuth flow)
+    func setSessionKey(_ sessionKey: String) async throws {
+        await sessionManager.setSessionKey(sessionKey)
+        
+        // Set the session key in ScrobbleKit manager
+        manager.setSessionKey(sessionKey)
+        
+        // Verify the session works by getting user info
+        do {
+            let userInfo = try await manager.getInfo(forUser: nil) // nil gets current authenticated user
+            await sessionManager.setUsername(userInfo.username)
+            logger.info("Session key set successfully for user: \(userInfo.username)")
+        } catch {
+            // Clear invalid session
+            await sessionManager.clearSession()
+            manager.signOut()
+            logger.error("Invalid session key provided: \(error)")
+            throw ToolError.authenticationFailed("Invalid session key: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Check if user is currently authenticated
+    func isAuthenticated() async -> Bool {
+        guard let sessionKey = await sessionManager.getSessionKey(), !sessionKey.isEmpty else {
+            return false
+        }
+        
+        // Verify session is still valid by making a simple API call
+        do {
+            _ = try await manager.getInfo(forUser: nil)
+            return true
+        } catch {
+            logger.warning("Session appears to be invalid: \(error)")
+            await clearSession()
+            return false
+        }
+    }
+    
+    /// Clear current session
+    func clearSession() async {
+        await sessionManager.clearSession()
+        manager.signOut()
+        logger.info("Session cleared")
+    }
+    
+    /// Legacy password authentication (deprecated but kept for backward compatibility)
     func authenticate(username: String, password: String) async throws -> SBKSessionResponseInfo {
+        logger.warning("Using deprecated password authentication - please migrate to browser OAuth")
+        
         do {
             let session = try await manager.startSession(username: username, password: password)
-            logger.info("Successfully authenticated as \(session.name)")
+            
+            // Store session info
+            await sessionManager.setSessionKey(session.key)
+            await sessionManager.setUsername(session.name)
+            
+            logger.info("Successfully authenticated as \(session.name) via password")
             return session
         } catch {
-            logger.error("Authentication failed: \(error)")
-            throw error
+            logger.error("Password authentication failed: \(error)")
+            throw ToolError.authenticationFailed("Authentication failed: \(error.localizedDescription)")
         }
+    }
+    
+    func getCurrentUsername() async -> String? {
+        let username = try? await getUserInfo(username: nil).username
+        return username
+    }
+    
+    // MARK: - OAuth Helper Methods
+    
+    /// Exchange OAuth token for session key
+    func exchangeTokenForSession(token: String) async throws -> String {
+        // Create signature for API call
+        let params = [
+            "api_key": apiKey,
+            "method": "auth.getSession",
+            "token": token
+        ]
+        
+        let signature = createAPISignature(params: params, secret: secretKey)
+        
+        // Make API request
+        let url = "https://ws.audioscrobbler.com/2.0/"
+        var urlComponents = URLComponents(string: url)!
+        
+        urlComponents.queryItems = [
+            URLQueryItem(name: "method", value: "auth.getSession"),
+            URLQueryItem(name: "api_key", value: apiKey),
+            URLQueryItem(name: "token", value: token),
+            URLQueryItem(name: "api_sig", value: signature),
+            URLQueryItem(name: "format", value: "json")
+        ]
+        
+        guard let requestURL = urlComponents.url else {
+            throw ToolError.authenticationFailed("Failed to construct API request URL")
+        }
+        
+        logger.info("Requesting session key from Last.fm API...")
+        
+        let (data, response) = try await URLSession.shared.data(from: requestURL)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw ToolError.authenticationFailed("Last.fm API request failed with status: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+        }
+        
+        // Parse JSON response
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ToolError.authenticationFailed("Invalid JSON response from Last.fm API")
+        }
+        
+        // Check for API error
+        if let error = json["error"] as? Int,
+           let message = json["message"] as? String {
+            throw ToolError.authenticationFailed("Last.fm API error \(error): \(message)")
+        }
+        
+        // Extract session key
+        guard let session = json["session"] as? [String: Any],
+              let sessionKey = session["key"] as? String,
+              let username = session["name"] as? String else {
+            throw ToolError.authenticationFailed("Invalid session data in Last.fm API response")
+        }
+        
+        // Store username for later use
+        await sessionManager.setUsername(username)
+        
+        logger.info("Successfully obtained session key for user: \(username)")
+        return sessionKey
+    }
+    
+    /// Create API signature for Last.fm requests
+    private func createAPISignature(params: [String: String], secret: String) -> String {
+        // Sort parameters alphabetically and concatenate
+        let sortedParams = params.sorted { $0.key < $1.key }
+        let paramString = sortedParams.map { "\($0.key)\($0.value)" }.joined()
+        let stringToSign = paramString + secret
+        
+        // Generate MD5 hash
+        return stringToSign.md5Hash
     }
     
     // MARK: - Artist Services
@@ -213,8 +363,6 @@ final class LastFMService: Sendable {
         }
         
         logger.info("Removing tag '\(tag)' from track: \(track) by \(artist)")
-        // Note: removeTag method needs to be added to ScrobbleKit or we need to check if it exists
-        // For now, assuming it follows the same pattern as artist/album removeTag
         return try await manager.removeTag(fromTrack: track, artist: artist, tag: tag)
     }
     
@@ -290,8 +438,8 @@ final class LastFMService: Sendable {
         }
     }
     
-    func getUserInfo(username: String) async throws -> SBKUser {
-        logger.info("Getting user info for: \(username)")
+    func getUserInfo(username: String?) async throws -> SBKUser {
+        logger.info("Getting user info for: \(username ?? "authenticated user")")
         return try await manager.getInfo(forUser: username)
     }
     
@@ -464,5 +612,34 @@ final class LastFMService: Sendable {
             logger.error("Service validation failed: \(error)")
             throw ToolError.lastFMError("Failed to connect to Last.fm service: \(error.localizedDescription)")
         }
+    }
+}
+
+// MARK: - Session Manager Actor
+
+/// Thread-safe session management using Actor
+actor SessionManager {
+    private var sessionKey: String?
+    private var username: String?
+    
+    func setSessionKey(_ key: String) {
+        self.sessionKey = key
+    }
+    
+    func getSessionKey() -> String? {
+        return sessionKey
+    }
+    
+    func setUsername(_ name: String) {
+        self.username = name
+    }
+    
+    func getUsername() -> String? {
+        return username
+    }
+    
+    func clearSession() {
+        sessionKey = nil
+        username = nil
     }
 }
