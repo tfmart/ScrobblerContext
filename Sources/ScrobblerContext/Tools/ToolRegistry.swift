@@ -19,16 +19,17 @@ struct ToolRegistry {
     private let artistTools: ArtistTools
     private let albumTools: AlbumTools
     private let trackTools: TrackTools
-    // Future tool categories will be added here:
-    // private let userTools: UserTools
-    // private let scrobbleTools: ScrobbleTools
+    private let userTools: UserTools
+    private let scrobbleTools: ScrobbleTools
     
     init(lastFMService: LastFMService) {
         self.authTools = AuthTools(lastFMService: lastFMService)
         self.artistTools = ArtistTools(lastFMService: lastFMService)
         self.albumTools = AlbumTools(lastFMService: lastFMService)
         self.trackTools = TrackTools(lastFMService: lastFMService)
-        logger.info("Tool registry initialized with Auth, Artist, Album, and Track tools")
+        self.userTools = UserTools(lastFMService: lastFMService)
+        self.scrobbleTools = ScrobbleTools(lastFMService: lastFMService)
+        logger.info("Tool registry initialized with ALL service categories: Auth, Artist, Album, Track, User, and Scrobble tools")
     }
     
     // MARK: - Public Interface
@@ -51,9 +52,11 @@ struct ToolRegistry {
         // Add track tools
         allTools.append(contentsOf: TrackTools.createTools())
         
-        // Future categories will be added here:
-        // allTools.append(contentsOf: UserTools.createTools())
-        // allTools.append(contentsOf: ScrobbleTools.createTools())
+        // Add user tools
+        allTools.append(contentsOf: UserTools.createTools())
+        
+        // Add scrobble tools
+        allTools.append(contentsOf: ScrobbleTools.createTools())
         
         logger.info("Registered \(allTools.count) tools total")
         return allTools
@@ -70,19 +73,18 @@ struct ToolRegistry {
             return AlbumTools.createTools()
         case .track:
             return TrackTools.createTools()
-        // Future cases:
-        // case .user:
-        //     return UserTools.createTools()
-        // case .scrobble:
-        //     return ScrobbleTools.createTools()
-        case .user, .scrobble, .unknown:
-            logger.warning("Requested tools for unimplemented category: \(category.description)")
+        case .user:
+            return UserTools.createTools()
+        case .scrobble:
+            return ScrobbleTools.createTools()
+        case .unknown:
+            logger.warning("Requested tools for unknown category: \(category.description)")
             return []
         }
     }
     
     /// Execute a tool by name
-    func executeTool(name: String, arguments: [String: Any]) async throws -> ToolResult {
+    func executeTool(name: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
         logger.info("Executing tool: \(name)")
         
         // Determine which category the tool belongs to and execute
@@ -97,13 +99,12 @@ struct ToolRegistry {
             return try await albumTools.execute(toolName: name, arguments: arguments)
         case .track:
             return try await trackTools.execute(toolName: name, arguments: arguments)
-        // Future cases:
-        // case .user:
-        //     return try await userTools.execute(toolName: name, arguments: arguments)
-        // case .scrobble:
-        //     return try await scrobbleTools.execute(toolName: name, arguments: arguments)
-        case .user, .scrobble, .unknown:
-            logger.error("Unknown or unimplemented tool requested: \(name)")
+        case .user:
+            return try await userTools.execute(toolName: name, arguments: arguments)
+        case .scrobble:
+            return try await scrobbleTools.execute(toolName: name, arguments: arguments)
+        case .unknown:
+            logger.error("Unknown tool requested: \(name)")
             throw ToolError.lastFMError("Unknown tool: \(name)")
         }
     }
@@ -138,57 +139,19 @@ struct ToolRegistry {
             return .track
         }
         
-        // Future category detection:
-        // if toolName.hasPrefix("search_album") ||
-        //    toolName.hasPrefix("get_album_") {
-        //     return .album
-        // }
+        // User tools
+        if toolName.hasPrefix("get_user_") {
+            return .user
+        }
         
-        // if toolName.hasPrefix("search_track") ||
-        //    toolName.hasPrefix("get_track_") {
-        //     return .track
-        // }
-        
-        // if toolName.hasPrefix("get_user_") {
-        //     return .user
-        // }
-        
-        // if toolName.hasPrefix("scrobble_") ||
-        //    toolName.hasPrefix("update_now_playing") {
-        //     return .scrobble
-        // }
+        // Scrobble tools
+        if toolName.hasPrefix("scrobble_") ||
+           toolName.hasPrefix("update_now_playing") ||
+           toolName.hasPrefix("love_track") ||
+           toolName.hasPrefix("unlove_track") {
+            return .scrobble
+        }
         
         return .unknown
-    }
-}
-
-// MARK: - Tool Categories
-
-enum ToolCategory {
-    case authentication
-    case artist
-    case album
-    case track
-    case user
-    case scrobble
-    case unknown
-    
-    var description: String {
-        switch self {
-        case .authentication:
-            return "Authentication & Session Management"
-        case .artist:
-            return "Artist Information & Search"
-        case .album:
-            return "Album Information & Search"
-        case .track:
-            return "Track Information & Search"
-        case .user:
-            return "User Data & Statistics"
-        case .scrobble:
-            return "Scrobbling & Now Playing"
-        case .unknown:
-            return "Unknown Category"
-        }
     }
 }

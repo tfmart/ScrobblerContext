@@ -122,7 +122,7 @@ struct TrackTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: Any]) async throws -> ToolResult {
+    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
         logger.info("Executing track tool: \(toolName)")
         
         switch toolName {
@@ -139,7 +139,7 @@ struct TrackTools {
     
     // MARK: - Individual Tool Implementations
     
-    private func executeSearchTrack(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeSearchTrack(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseSearchTrackInput(arguments)
         
         do {
@@ -165,7 +165,7 @@ struct TrackTools {
         }
     }
     
-    private func executeGetTrackInfo(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeGetTrackInfo(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseGetTrackInfoInput(arguments)
         
         do {
@@ -185,7 +185,7 @@ struct TrackTools {
         }
     }
     
-    private func executeGetSimilarTracks(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeGetSimilarTracks(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseGetSimilarTracksInput(arguments)
         
         do {
@@ -210,19 +210,14 @@ struct TrackTools {
     
     // MARK: - Input Parsing Helpers
     
-    private func parseSearchTrackInput(_ arguments: [String: Any]) throws -> SearchTrackInput {
+    private func parseSearchTrackInput(_ arguments: [String: (any Sendable)]) throws -> SearchTrackInput {
         guard let queryValue = arguments["query"] else {
             throw ToolError.missingParameter("query")
         }
         
         let query = "\(queryValue)"
         let artist = arguments.getString(for: "artist")
-        let limit = arguments.getInt(for: "limit") ?? 10
-        
-        // Validate limit bounds
-        guard limit >= 1 && limit <= 50 else {
-            throw ToolError.invalidParameterType("limit", expected: "integer between 1 and 50")
-        }
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
         
         return SearchTrackInput(
             query: query,
@@ -231,7 +226,7 @@ struct TrackTools {
         )
     }
     
-    private func parseGetTrackInfoInput(_ arguments: [String: Any]) throws -> GetTrackInfoInput {
+    private func parseGetTrackInfoInput(_ arguments: [String: (any Sendable)]) throws -> GetTrackInfoInput {
         guard let trackValue = arguments["track"] else {
             throw ToolError.missingParameter("track")
         }
@@ -253,7 +248,7 @@ struct TrackTools {
         )
     }
     
-    private func parseGetSimilarTracksInput(_ arguments: [String: Any]) throws -> GetSimilarTracksInput {
+    private func parseGetSimilarTracksInput(_ arguments: [String: (any Sendable)]) throws -> GetSimilarTracksInput {
         guard let trackValue = arguments["track"] else {
             throw ToolError.missingParameter("track")
         }
@@ -264,13 +259,8 @@ struct TrackTools {
         
         let track = "\(trackValue)"
         let artist = "\(artistValue)"
-        let limit = arguments.getInt(for: "limit") ?? 10
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
-        
-        // Validate limit bounds
-        guard limit >= 1 && limit <= 50 else {
-            throw ToolError.invalidParameterType("limit", expected: "integer between 1 and 50")
-        }
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
         
         return GetSimilarTracksInput(
             track: track,

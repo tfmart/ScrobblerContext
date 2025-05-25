@@ -115,7 +115,7 @@ struct ArtistTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: Any]) async throws -> ToolResult {
+    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
         logger.info("Executing artist tool: \(toolName)")
         
         switch toolName {
@@ -132,7 +132,7 @@ struct ArtistTools {
     
     // MARK: - Individual Tool Implementations
     
-    private func executeSearchArtist(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeSearchArtist(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseSearchArtistInput(arguments)
         
         do {
@@ -152,7 +152,7 @@ struct ArtistTools {
         }
     }
     
-    private func executeGetArtistInfo(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeGetArtistInfo(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseGetArtistInfoInput(arguments)
         
         do {
@@ -171,7 +171,7 @@ struct ArtistTools {
         }
     }
     
-    private func executeGetSimilarArtists(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeGetSimilarArtists(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseGetSimilarArtistsInput(arguments)
         
         do {
@@ -193,18 +193,13 @@ struct ArtistTools {
     
     // MARK: - Input Parsing Helpers
     
-    private func parseSearchArtistInput(_ arguments: [String: Any]) throws -> SearchArtistInput {
+    private func parseSearchArtistInput(_ arguments: [String: (any Sendable)]) throws -> SearchArtistInput {
         guard let queryValue = arguments["query"] else {
             throw ToolError.missingParameter("query")
         }
         
         let query = "\(queryValue)"
-        let limit = arguments.getInt(for: "limit") ?? 10
-        
-        // Validate limit bounds
-        guard limit >= 1 && limit <= 50 else {
-            throw ToolError.invalidParameterType("limit", expected: "integer between 1 and 50")
-        }
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
         
         return SearchArtistInput(
             query: query,
@@ -212,7 +207,7 @@ struct ArtistTools {
         )
     }
     
-    private func parseGetArtistInfoInput(_ arguments: [String: Any]) throws -> GetArtistInfoInput {
+    private func parseGetArtistInfoInput(_ arguments: [String: (any Sendable)]) throws -> GetArtistInfoInput {
         guard let nameValue = arguments["name"] else {
             throw ToolError.missingParameter("name")
         }
@@ -230,23 +225,19 @@ struct ArtistTools {
         )
     }
     
-    private func parseGetSimilarArtistsInput(_ arguments: [String: Any]) throws -> GetSimilarArtistsInput {
+    private func parseGetSimilarArtistsInput(_ arguments: [String: (any Sendable)]) throws -> GetSimilarArtistsInput {
         guard let nameValue = arguments["name"] else {
             throw ToolError.missingParameter("name")
         }
         
         let name = "\(nameValue)"
-        let limit = arguments.getInt(for: "limit") ?? 10
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
-        
-        // Validate limit bounds
-        guard limit >= 1 && limit <= 50 else {
-            throw ToolError.invalidParameterType("limit", expected: "integer between 1 and 50")
-        }
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
         
         return GetSimilarArtistsInput(
             name: name,
-            limit: limit
+            limit: limit,
+            autocorrect: autocorrect
         )
     }
 }

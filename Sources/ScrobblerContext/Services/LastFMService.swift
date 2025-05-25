@@ -98,6 +98,35 @@ final class LastFMService: Sendable {
         return try await manager.getTopTracks(forUser: user, limit: limit)
     }
     
+    func getUserInfo(username: String) async throws -> SBKUser {
+        logger.info("Getting user info for: \(username)")
+        return try await manager.getInfo(forUser: username)
+    }
+    
+    // MARK: - Love/Unlove Services
+    
+    func loveTrack(track: String, artist: String) async throws {
+        guard await isAuthenticated() else {
+            logger.error("Cannot love track: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Loving track: \(track) by \(artist)")
+        try await manager.loveTrack(track: track, artist: artist)
+        logger.info("Successfully loved: \(track) by \(artist)")
+    }
+    
+    func unloveTrack(track: String, artist: String) async throws {
+        guard await isAuthenticated() else {
+            logger.error("Cannot unlove track: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Unloving track: \(track) by \(artist)")
+        try await manager.unloveTrack(track: track, artist: artist)
+        logger.info("Successfully unloved: \(track) by \(artist)")
+    }
+    
     // MARK: - Scrobbling Services
     
     func scrobbleTrack(artist: String, track: String, album: String? = nil) async throws -> Bool {

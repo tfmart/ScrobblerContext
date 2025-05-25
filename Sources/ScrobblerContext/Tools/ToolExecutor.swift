@@ -21,7 +21,7 @@ struct ToolExecutor {
     // MARK: - Public Interface
     
     /// Execute a tool call and return formatted result
-    func execute(toolName: String, arguments: [String: Any]?) async throws -> CallTool.Result {
+    func execute(toolName: String, arguments: [String: (any Sendable)]?) async throws -> CallTool.Result {
         let startTime = Date()
         logger.info("Starting execution of tool: \(toolName)")
         
@@ -79,7 +79,7 @@ struct ToolExecutor {
     // MARK: - Validation
     
     /// Validate tool arguments against expected schema
-    func validateToolArguments(toolName: String, arguments: [String: Any]) throws {
+    func validateToolArguments(toolName: String, arguments: [String: (any Sendable)]) throws {
         logger.debug("Validating arguments for tool: \(toolName)")
         
         // This is a basic validation - in a more sophisticated implementation,
@@ -124,6 +124,15 @@ struct ToolExecutor {
                 try validateOptionalLimit(in: arguments)
             }
             
+        // User tools
+        case "get_user_recent_tracks", "get_user_top_artists", "get_user_top_tracks", "get_user_info":
+            try validateRequired(["username"], in: arguments)
+            // For tools with limit/page parameters
+            if toolName != "get_user_info" {
+                try validateOptionalUserLimit(toolName: toolName, in: arguments)
+                try validateOptionalPage(in: arguments)
+            }
+            
         // Future tool validations
         case "search_album", "search_track":
             try validateRequired(["query"], in: arguments)
@@ -137,6 +146,10 @@ struct ToolExecutor {
         case "scrobble_track":
             try validateRequired(["artist", "track"], in: arguments)
             
+        // Scrobble tools
+        case "scrobble_track", "update_now_playing", "love_track", "unlove_track":
+            try validateRequired(["artist", "track"], in: arguments)
+            
         default:
             // For tools we don't know about, skip validation
             logger.debug("No specific validation rules for tool: \(toolName)")
@@ -145,7 +158,7 @@ struct ToolExecutor {
     
     // MARK: - Private Helpers
     
-    private func validateRequired(_ requiredParams: [String], in arguments: [String: Any]) throws {
+    private func validateRequired(_ requiredParams: [String], in arguments: [String: (any Sendable)]) throws {
         for param in requiredParams {
             if arguments[param] == nil {
                 throw ToolError.missingParameter(param)
@@ -153,15 +166,20 @@ struct ToolExecutor {
         }
     }
     
-    private func validateOptionalLimit(in arguments: [String: Any]) throws {
-        if let limitValue = arguments["limit"] {
-            guard let limit = arguments.getInt(for: "limit"), limit >= 1 && limit <= 50 else {
-                throw ToolError.invalidParameterType("limit", expected: "integer between 1 and 50")
-            }
-        }
+    private func validateOptionalLimit(in arguments: [String: (any Sendable)]) throws {
+        _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
     }
     
-    private func sanitizeArguments(_ arguments: [String: Any]) -> [String: Any] {
+    private func validateOptionalUserLimit(toolName: String, in arguments: [String: (any Sendable)]) throws {
+        let maxLimit = toolName == "get_user_recent_tracks" ? 200 : 1000
+        _ = try arguments.getValidatedInt(for: "limit", min: 1, max: maxLimit)
+    }
+    
+    private func validateOptionalPage(in arguments: [String: (any Sendable)]) throws {
+        _ = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max)
+    }
+    
+    private func sanitizeArguments(_ arguments: [String: (any Sendable)]) -> [String: (any Sendable)] {
         var sanitized = arguments
         
         // Remove or mask sensitive fields

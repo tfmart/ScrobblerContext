@@ -2,14 +2,6 @@
 //  AlbumTools.swift
 //  ScrobblerContext
 //
-//  Created by Tomas Martins on 24/05/25.
-//
-
-
-//
-//  AlbumTools.swift
-//  ScrobblerContext
-//
 //  Created by Tomas Martins on 17/05/25.
 //
 
@@ -97,7 +89,7 @@ struct AlbumTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: Any]) async throws -> ToolResult {
+    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
         logger.info("Executing album tool: \(toolName)")
         
         switch toolName {
@@ -112,7 +104,7 @@ struct AlbumTools {
     
     // MARK: - Individual Tool Implementations
     
-    private func executeSearchAlbum(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeSearchAlbum(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseSearchAlbumInput(arguments)
         
         do {
@@ -132,12 +124,10 @@ struct AlbumTools {
         }
     }
     
-    private func executeGetAlbumInfo(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeGetAlbumInfo(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseGetAlbumInfoInput(arguments)
         
         do {
-            // For now, we'll use the basic getAlbumInfo method
-            // In the future, we can extend LastFMService to support additional parameters
             let album = try await lastFMService.getAlbumInfo(
                 album: input.album,
                 artist: input.artist
@@ -156,18 +146,13 @@ struct AlbumTools {
     
     // MARK: - Input Parsing Helpers
     
-    private func parseSearchAlbumInput(_ arguments: [String: Any]) throws -> SearchAlbumInput {
+    private func parseSearchAlbumInput(_ arguments: [String: (any Sendable)]) throws -> SearchAlbumInput {
         guard let queryValue = arguments["query"] else {
             throw ToolError.missingParameter("query")
         }
         
         let query = "\(queryValue)"
-        let limit = arguments.getInt(for: "limit") ?? 10
-        
-        // Validate limit bounds
-        guard limit >= 1 && limit <= 50 else {
-            throw ToolError.invalidParameterType("limit", expected: "integer between 1 and 50")
-        }
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
         
         return SearchAlbumInput(
             query: query,
@@ -175,7 +160,7 @@ struct AlbumTools {
         )
     }
     
-    private func parseGetAlbumInfoInput(_ arguments: [String: Any]) throws -> GetAlbumInfoInput {
+    private func parseGetAlbumInfoInput(_ arguments: [String: (any Sendable)]) throws -> GetAlbumInfoInput {
         guard let albumValue = arguments["album"] else {
             throw ToolError.missingParameter("album")
         }

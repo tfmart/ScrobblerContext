@@ -50,9 +50,13 @@ struct GetArtistInfoInput: ToolInput {
 struct GetSimilarArtistsInput: ToolInput {
     let name: String
     let limit: Int
+    let autocorrect: Bool
     
     static let requiredParameters = ["name"]
-    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "limit": 10,
+        "autocorrect": true
+    ]
 }
 
 // MARK: - Album Tools
@@ -93,17 +97,27 @@ struct SearchTrackInput: ToolInput {
 struct GetUserRecentTracksInput: ToolInput {
     let username: String
     let limit: Int
+    let page: Int
     
     static let requiredParameters = ["username"]
-    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "limit": 10,
+        "page": 1
+    ]
 }
 
 struct GetUserTopArtistsInput: ToolInput {
     let username: String
+    let period: String
     let limit: Int
+    let page: Int
     
     static let requiredParameters = ["username"]
-    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "period": "overall",
+        "limit": 10,
+        "page": 1
+    ]
 }
 
 // MARK: - Scrobble Tools

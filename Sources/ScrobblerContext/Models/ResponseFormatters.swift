@@ -238,6 +238,46 @@ struct ResponseFormatters {
         ]
     }
     
+    static func formatScrobbleResult(success: Bool, artist: String, track: String, album: String? = nil) -> [String: Any] {
+        var result: [String: Any] = [
+            "scrobbled": success,
+            "artist": artist,
+            "track": track,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+        
+        if let album = album {
+            result["album"] = album
+        }
+        
+        return result
+    }
+    
+    static func formatNowPlayingResult(success: Bool, artist: String, track: String, album: String? = nil) -> [String: Any] {
+        var result: [String: Any] = [
+            "now_playing_updated": success,
+            "artist": artist,
+            "track": track,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+        
+        if let album = album {
+            result["album"] = album
+        }
+        
+        return result
+    }
+    
+    static func formatLoveResult(loved: Bool, artist: String, track: String) -> [String: Any] {
+        return [
+            "loved": loved,
+            "artist": artist,
+            "track": track,
+            "action": loved ? "loved" : "unloved",
+            "timestamp": Date().timeIntervalSince1970
+        ]
+    }
+    
     // MARK: - Authentication Result Formatters
     
     static func formatAuthenticationResult(_ success: Bool, username: String? = nil) -> [String: Any] {
@@ -248,6 +288,53 @@ struct ResponseFormatters {
         }
         
         result["timestamp"] = Date().timeIntervalSince1970
+        
+        return result
+    }
+    
+    // MARK: - User Info Formatters
+    
+    static func formatUserInfo(_ user: SBKUser) -> [String: Any] {
+        var result: [String: Any] = [
+            "username": user.username,
+            "url": user.url,
+            "playcount": user.playcount,
+            "is_pro": user.isPro,
+            "member_since": user.memberSince.timeIntervalSince1970,
+            "member_since_date": ISO8601DateFormatter().string(from: user.memberSince)
+        ]
+        
+        if let realName = user.realName {
+            result["real_name"] = realName
+        }
+        
+        if let country = user.country {
+            result["country"] = country
+        }
+        
+        if let age = user.age {
+            result["age"] = age
+        }
+        
+        if let gender = user.gender {
+            result["gender"] = gender
+        }
+        
+        if let artistCount = user.artistCount {
+            result["artist_count"] = artistCount
+        }
+        
+        if let playlistsCount = user.playlistsCount {
+            result["playlists_count"] = playlistsCount
+        }
+        
+        if let imageURL = user.image?.largestSize?.absoluteString {
+            result["image"] = imageURL
+        }
+        
+        if let type = user.type {
+            result["account_type"] = type
+        }
         
         return result
     }
