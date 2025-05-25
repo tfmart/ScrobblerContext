@@ -181,6 +181,43 @@ final class LastFMService: Sendable {
         return try await manager.getSimilarTracks(.trackInfo(track, artist: artist), autoCorrect: autocorrect, limit: limit)
     }
     
+    func getCorrectedTrackInfo(track: String, artist: String) async throws -> SBKTrack? {
+        logger.info("Getting corrected track info for: \(track) by \(artist)")
+        return try await manager.getCorrectedTrackInfo(for: track, by: artist)
+    }
+    
+    func getTrackTags(track: String, artist: String, autocorrect: Bool = true, username: String? = nil) async throws -> [SBKTag] {
+        logger.info("Getting tags for track: \(track) by \(artist) (autocorrect: \(autocorrect), username: \(username ?? "none"))")
+        return try await manager.getTags(forTrack: .trackInfo(track, artist: artist), autoCorrect: autocorrect, username: username)
+    }
+    
+    func getTrackTopTags(track: String, artist: String, autocorrect: Bool = true) async throws -> [SBKTag] {
+        logger.info("Getting top tags for track: \(track) by \(artist) (autocorrect: \(autocorrect))")
+        return try await manager.getTopTagsForTrack(searchMethod: .trackInfo(track, artist: artist), autoCorrect: autocorrect)
+    }
+    
+    func addTagsToTrack(track: String, artist: String, tags: [String]) async throws -> Bool {
+        guard await isAuthenticated() else {
+            logger.error("Cannot add tags to track: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Adding tags to track: \(track) by \(artist), tags: \(tags)")
+        return try await manager.addTags(toTrack: track, artist: artist, tags: tags)
+    }
+    
+    func removeTagFromTrack(track: String, artist: String, tag: String) async throws -> Bool {
+        guard await isAuthenticated() else {
+            logger.error("Cannot remove tag from track: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Removing tag '\(tag)' from track: \(track) by \(artist)")
+        // Note: removeTag method needs to be added to ScrobbleKit or we need to check if it exists
+        // For now, assuming it follows the same pattern as artist/album removeTag
+        return try await manager.removeTag(fromTrack: track, artist: artist, tag: tag)
+    }
+    
     // MARK: - User Services
     
     func getUserRecentTracks(
@@ -353,6 +390,30 @@ final class LastFMService: Sendable {
         }
         
         return success
+    }
+    
+    func scrobbleMultipleTracks(_ tracks: [SBKTrackToScrobble]) async throws -> SBKScrobbleResponse {
+        guard await isAuthenticated() else {
+            logger.error("Cannot scrobble multiple tracks: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Scrobbling \(tracks.count) tracks")
+        
+        let response = try await manager.scrobble(tracks: tracks)
+        
+        let successCount = response.acceptedCount
+        let failureCount = tracks.count - successCount
+        
+        if response.isCompletelySuccessful {
+            logger.info("Successfully scrobbled all \(tracks.count) tracks")
+        } else if successCount > 0 {
+            logger.warning("Partially successful: \(successCount) succeeded, \(failureCount) failed")
+        } else {
+            logger.error("Failed to scrobble all \(tracks.count) tracks")
+        }
+        
+        return response
     }
     
     func updateNowPlaying(

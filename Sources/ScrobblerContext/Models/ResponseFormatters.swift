@@ -215,6 +215,22 @@ struct ResponseFormatters {
         }
     }
     
+    // MARK: - Track Correction Formatters
+    
+    static func formatTrackCorrection(_ track: SBKTrack?) -> [String: Any] {
+        if let correctedTrack = track {
+            return [
+                "corrected": true,
+                "corrected_track": format(correctedTrack)
+            ]
+        } else {
+            return [
+                "corrected": false,
+                "message": "No correction available"
+            ]
+        }
+    }
+    
     // MARK: - Tag Operation Result Formatters
     
     static func formatTagOperationResult(success: Bool, operation: String, artist: String, tags: [String]? = nil, tag: String? = nil) -> [String: Any] {
@@ -364,6 +380,42 @@ struct ResponseFormatters {
         }
         
         return result
+    }
+    
+    static func formatMultipleScrobbleResult(_ response: SBKScrobbleResponse) -> [String: Any] {
+        let scrobbleResults = response.results.map { scrobble -> [String: Any] in
+            var scrobbleDict: [String: Any] = [
+                "artist": scrobble.track.artist,
+                "track": scrobble.track.track,
+                "successful": scrobble.isAccepted
+            ]
+            
+            if let album = scrobble.track.album {
+                scrobbleDict["album"] = album
+            }
+            
+            let timestamp = scrobble.track.timestamp
+            scrobbleDict["timestamp"] = timestamp.timeIntervalSince1970
+            scrobbleDict["timestamp_date"] = ISO8601DateFormatter().string(from: timestamp)
+            
+            if let ignoredMessage = scrobble.error {
+                scrobbleDict["ignored_message"] = ignoredMessage.rawValue
+            }
+            
+            return scrobbleDict
+        }
+        
+        let successCount = response.acceptedCount
+        let failureCount = response.ignoredCount
+        
+        return [
+            "overall_success": response.isCompletelySuccessful,
+            "total_tracks": response.results.count,
+            "successful_count": successCount,
+            "failed_count": failureCount,
+            "scrobbles": scrobbleResults,
+            "timestamp": Date().timeIntervalSince1970
+        ]
     }
     
     static func formatNowPlayingResult(success: Bool, artist: String, track: String, album: String? = nil) -> [String: Any] {

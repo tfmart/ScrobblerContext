@@ -162,6 +162,18 @@ struct ToolExecutor {
                 }
             }
             
+        case .getTrackCorrection:
+            try validateRequired(["track", "artist"], in: arguments)
+            
+        case .getTrackTags, .getTrackTopTags:
+            try validateRequired(["track", "artist"], in: arguments)
+            
+        case .addTrackTags:
+            try validateRequired(["track", "artist", "tags"], in: arguments)
+            
+        case .removeTrackTag:
+            try validateRequired(["track", "artist", "tag"], in: arguments)
+            
         // User tools
         case .getUserRecentTracks:
             try validateRequired(["username"], in: arguments)
@@ -204,6 +216,9 @@ struct ToolExecutor {
         // Scrobble tools
         case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack:
             try validateRequired(["artist", "track"], in: arguments)
+            
+        case .scrobbleMultipleTracks:
+            try validateRequired(["tracks"], in: arguments)
         }
     }
     

@@ -37,6 +37,11 @@ enum ToolName: String, CaseIterable {
     case searchTrack = "search_track"
     case getTrackInfo = "get_track_info"
     case getSimilarTracks = "get_similar_tracks"
+    case getTrackCorrection = "get_track_correction"
+    case getTrackTags = "get_track_tags"
+    case getTrackTopTags = "get_track_top_tags"
+    case addTrackTags = "add_track_tags"
+    case removeTrackTag = "remove_track_tag"
     
     // MARK: - User Tools
     case getUserRecentTracks = "get_user_recent_tracks"
@@ -51,6 +56,7 @@ enum ToolName: String, CaseIterable {
     
     // MARK: - Scrobble Tools
     case scrobbleTrack = "scrobble_track"
+    case scrobbleMultipleTracks = "scrobble_multiple_tracks"
     case updateNowPlaying = "update_now_playing"
     case loveTrack = "love_track"
     case unloveTrack = "unlove_track"
@@ -66,11 +72,11 @@ enum ToolName: String, CaseIterable {
             return .artist
         case .searchAlbum, .getAlbumInfo, .addAlbumTags, .getAlbumTags, .getAlbumTopTags, .removeAlbumTag:
             return .album
-        case .searchTrack, .getTrackInfo, .getSimilarTracks:
+        case .searchTrack, .getTrackInfo, .getSimilarTracks, .getTrackCorrection, .getTrackTags, .getTrackTopTags, .addTrackTags, .removeTrackTag:
             return .track
         case .getUserRecentTracks, .getUserTopArtists, .getUserTopTracks, .getUserInfo, .getUserFriends, .getUserLovedTracks, .getUserPersonalTagsForArtists, .getUserTopAlbums, .getUserTopTags:
             return .user
-        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack:
+        case .scrobbleTrack, .scrobbleMultipleTracks, .updateNowPlaying, .loveTrack, .unloveTrack:
             return .scrobble
         }
     }
@@ -78,7 +84,7 @@ enum ToolName: String, CaseIterable {
     /// Whether this tool requires authentication
     var requiresAuthentication: Bool {
         switch self {
-        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag, .addAlbumTags, .removeAlbumTag:
+        case .scrobbleTrack, .scrobbleMultipleTracks, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag, .addAlbumTags, .removeAlbumTag, .addTrackTags, .removeTrackTag:
             return true
         case .setSessionKey, .authenticateUser:
             return false // These tools establish authentication
@@ -132,6 +138,16 @@ enum ToolName: String, CaseIterable {
             return "Get detailed information about a specific track"
         case .getSimilarTracks:
             return "Get tracks similar to the specified track"
+        case .getTrackCorrection:
+            return "Get corrected track and artist names if available"
+        case .getTrackTags:
+            return "Get tags applied to a track by a user or all users"
+        case .getTrackTopTags:
+            return "Get top tags for a track ordered by popularity"
+        case .addTrackTags:
+            return "Add tags to a track (requires authentication)"
+        case .removeTrackTag:
+            return "Remove a tag from a track (requires authentication)"
         case .getUserRecentTracks:
             return "Get a user's recently played tracks from Last.fm"
         case .getUserTopArtists:
@@ -152,6 +168,8 @@ enum ToolName: String, CaseIterable {
             return "Get a user's top tags ordered by usage"
         case .scrobbleTrack:
             return "Scrobble a track to the authenticated user's Last.fm profile"
+        case .scrobbleMultipleTracks:
+            return "Scrobble multiple tracks at once to the authenticated user's Last.fm profile"
         case .updateNowPlaying:
             return "Update the currently playing track for the authenticated user"
         case .loveTrack:

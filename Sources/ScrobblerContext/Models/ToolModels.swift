@@ -229,6 +229,56 @@ struct GetSimilarTracksInput: ToolInput {
     ]
 }
 
+struct GetTrackCorrectionInput: ToolInput {
+    let track: String
+    let artist: String
+    
+    static let requiredParameters = ["track", "artist"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
+struct GetTrackTagsInput: ToolInput {
+    let track: String
+    let artist: String
+    let autocorrect: Bool
+    let username: String?
+    
+    static let requiredParameters = ["track", "artist"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "autocorrect": true,
+        "username": ""
+    ]
+}
+
+struct GetTrackTopTagsInput: ToolInput {
+    let track: String
+    let artist: String
+    let autocorrect: Bool
+    
+    static let requiredParameters = ["track", "artist"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "autocorrect": true
+    ]
+}
+
+struct AddTrackTagsInput: ToolInput {
+    let track: String
+    let artist: String
+    let tags: [String]
+    
+    static let requiredParameters = ["track", "artist", "tags"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
+struct RemoveTrackTagInput: ToolInput {
+    let track: String
+    let artist: String
+    let tag: String
+    
+    static let requiredParameters = ["track", "artist", "tag"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
 // MARK: - User Tools
 struct GetUserRecentTracksInput: ToolInput {
     let username: String
@@ -368,6 +418,13 @@ struct ScrobbleTrackInput: ToolInput {
         "chosen_by_user": false,
         "mbid": ""
     ]
+}
+
+struct ScrobbleMultipleTracksInput: ToolInput {
+    let tracks: [[String: Any]]
+    
+    static let requiredParameters = ["tracks"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
 }
 
 struct UpdateNowPlayingInput: ToolInput {

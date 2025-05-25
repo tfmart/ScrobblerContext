@@ -24,6 +24,7 @@ struct ScrobbleTools {
     static func createTools() -> [Tool] {
         return [
             createScrobbleTrackTool(),
+            createScrobbleMultipleTracksTool(),
             createUpdateNowPlayingTool(),
             createLoveTrackTool(),
             createUnloveTrackTool()
@@ -75,6 +76,66 @@ struct ScrobbleTools {
                     ])
                 ]),
                 "required": .array([.string("artist"), .string("track")])
+            ])
+        )
+    }
+    
+    private static func createScrobbleMultipleTracksTool() -> Tool {
+        return Tool(
+            name: ToolName.scrobbleMultipleTracks.rawValue,
+            description: ToolName.scrobbleMultipleTracks.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "tracks": .object([
+                        "type": .string("array"),
+                        "description": .string("Array of tracks to scrobble (maximum 50 tracks)"),
+                        "maxItems": .int(50),
+                        "items": .object([
+                            "type": .string("object"),
+                            "properties": .object([
+                                "artist": .object([
+                                    "type": .string("string"),
+                                    "description": .string("Name of the artist who performed the track")
+                                ]),
+                                "track": .object([
+                                    "type": .string("string"),
+                                    "description": .string("Name of the track to scrobble")
+                                ]),
+                                "timestamp": .object([
+                                    "type": .string("integer"),
+                                    "description": .string("Unix timestamp when the track was played (optional, defaults to current time)")
+                                ]),
+                                "album": .object([
+                                    "type": .string("string"),
+                                    "description": .string("Name of the album (optional but recommended)")
+                                ]),
+                                "album_artist": .object([
+                                    "type": .string("string"),
+                                    "description": .string("Name of the album artist if different from track artist (optional)")
+                                ]),
+                                "track_number": .object([
+                                    "type": .string("integer"),
+                                    "description": .string("Track number on the album (optional)")
+                                ]),
+                                "duration": .object([
+                                    "type": .string("integer"),
+                                    "description": .string("Length of the track in seconds (optional)")
+                                ]),
+                                "chosen_by_user": .object([
+                                    "type": .string("boolean"),
+                                    "description": .string("Whether the track was chosen by the user or was automatically played (optional)")
+                                ]),
+                                "mbid": .object([
+                                    "type": .string("string"),
+                                    "description": .string("MusicBrainz ID for the track (optional)")
+                                ])
+                            ]),
+                            "required": .array([.string("artist"), .string("track")])
+                        ])
+                    ])
+                ]),
+                "required": .array([.string("tracks")])
             ])
         )
     }
@@ -174,6 +235,8 @@ struct ScrobbleTools {
         switch toolName {
         case .scrobbleTrack:
             return try await executeScrobbleTrack(arguments: arguments)
+        case .scrobbleMultipleTracks:
+            return try await executeScrobbleMultipleTracks(arguments: arguments)
         case .updateNowPlaying:
             return try await executeUpdateNowPlaying(arguments: arguments)
         case .loveTrack:
@@ -220,6 +283,59 @@ struct ScrobbleTools {
         } catch {
             logger.error("Failed to scrobble '\(input.track)' by '\(input.artist)': \(error)")
             return ToolResult.failure(error: "Scrobble failed: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeScrobbleMultipleTracks(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseScrobbleMultipleTracksInput(arguments)
+        
+        do {
+            // Convert input to SBKTrackToScrobble objects
+            var tracksToScrobble: [SBKTrackToScrobble] = []
+            
+            for trackData in input.tracks {
+                guard let artist = trackData["artist"] as? String,
+                      let track = trackData["track"] as? String else {
+                    throw ToolError.invalidParameterType("tracks", expected: "array of objects with 'artist' and 'track' fields")
+                }
+                
+                var timestamp: Date = Date()
+                if let timestampValue = trackData["timestamp"] as? Int {
+                    timestamp = Date(timeIntervalSince1970: TimeInterval(timestampValue))
+                }
+                
+                let album = trackData["album"] as? String
+                let albumArtist = trackData["album_artist"] as? String
+                let trackNumber = trackData["track_number"] as? Int
+                let duration = trackData["duration"] as? Int
+                let chosenByUser = trackData["chosen_by_user"] as? Bool
+                let mbid = trackData["mbid"] as? String
+                
+                let trackToScrobble = SBKTrackToScrobble(
+                    artist: artist,
+                    track: track,
+                    timestamp: timestamp,
+                    album: album,
+                    albumArtist: albumArtist,
+                    trackNumber: trackNumber,
+                    duration: duration,
+                    chosenByUser: chosenByUser,
+                    mbid: mbid
+                )
+                
+                tracksToScrobble.append(trackToScrobble)
+            }
+            
+            let response = try await lastFMService.scrobbleMultipleTracks(tracksToScrobble)
+            
+            logger.info("Scrobbled \(tracksToScrobble.count) tracks: \(response.acceptedCount) successful")
+            
+            let result = ResponseFormatters.formatMultipleScrobbleResult(response)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to scrobble multiple tracks: \(error)")
+            return ToolResult.failure(error: "Multiple track scrobble failed: \(error.localizedDescription)")
         }
     }
     
@@ -334,6 +450,37 @@ struct ScrobbleTools {
             chosenByUser: chosenByUser,
             mbid: mbid
         )
+    }
+    
+    private func parseScrobbleMultipleTracksInput(_ arguments: [String: (any Sendable)]) throws -> ScrobbleMultipleTracksInput {
+        guard let tracksValue = arguments["tracks"] else {
+            throw ToolError.missingParameter("tracks")
+        }
+        
+        guard let tracksArray = tracksValue as? [[String: Any]] else {
+            throw ToolError.invalidParameterType("tracks", expected: "array of track objects")
+        }
+        
+        guard !tracksArray.isEmpty else {
+            throw ToolError.invalidParameterType("tracks", expected: "non-empty array of track objects")
+        }
+        
+        guard tracksArray.count <= 50 else {
+            throw ToolError.invalidParameterType("tracks", expected: "maximum 50 tracks")
+        }
+        
+        // Validate each track has required fields
+        for (index, track) in tracksArray.enumerated() {
+            guard track["artist"] != nil else {
+                throw ToolError.invalidParameterType("tracks[\(index)]", expected: "object with 'artist' field")
+            }
+            
+            guard track["track"] != nil else {
+                throw ToolError.invalidParameterType("tracks[\(index)]", expected: "object with 'track' field")
+            }
+        }
+        
+        return ScrobbleMultipleTracksInput(tracks: tracksArray)
     }
     
     private func parseUpdateNowPlayingInput(_ arguments: [String: (any Sendable)]) throws -> UpdateNowPlayingInput {
