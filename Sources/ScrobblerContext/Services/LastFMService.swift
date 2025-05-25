@@ -80,23 +80,35 @@ final class LastFMService: Sendable {
     
     // MARK: - Track Services
     
-    func searchTrack(query: String, artist: String? = nil, limit: Int = 10) async throws -> [SBKTrack] {
+    func searchTrack(query: String, artist: String? = nil, limit: Int = 10, page: Int = 1) async throws -> [SBKTrack] {
         if let artist = artist {
-            logger.info("Searching for track: \(query) by \(artist) (limit: \(limit))")
+            logger.info("Searching for track: \(query) by \(artist) (limit: \(limit), page: \(page))")
         } else {
-            logger.info("Searching for track: \(query) (limit: \(limit))")
+            logger.info("Searching for track: \(query) (limit: \(limit), page: \(page))")
         }
-        return try await manager.search(track: query, artist: artist, limit: limit)
+        // Note: ScrobbleKit uses page: 0 as default, but we'll convert from 1-based to 0-based
+        let apiPage = max(0, page - 1)
+        return try await manager.search(track: query, artist: artist, limit: limit, page: apiPage)
     }
     
-    func getTrackInfo(track: String, artist: String) async throws -> SBKTrack {
-        logger.info("Getting track info for: \(track) by \(artist)")
-        return try await manager.getInfo(forTrack: track, artist: artist)
+    func getTrackInfo(track: String, artist: String, username: String? = nil, autocorrect: Bool = false, language: String = "en") async throws -> SBKTrack {
+        logger.info("Getting track info for: \(track) by \(artist) (username: \(username ?? "none"), autocorrect: \(autocorrect), language: \(language))")
+        
+        // Convert string language code to SBKLanguageCode
+        let languageCode = SBKLanguageCode(rawValue: language) ?? .english
+        
+        return try await manager.getInfo(
+            forTrack: track,
+            artist: artist,
+            username: username,
+            autoCorrect: autocorrect,
+            languageCode: languageCode
+        )
     }
     
-    func getSimilarTracks(track: String, artist: String, limit: Int = 10) async throws -> [SBKSimilarTrack] {
-        logger.info("Getting similar tracks for: \(track) by \(artist) (limit: \(limit))")
-        return try await manager.getSimilarTracks(.trackInfo(track, artist: artist), limit: limit)
+    func getSimilarTracks(track: String, artist: String, autocorrect: Bool = true, limit: Int? = nil) async throws -> [SBKSimilarTrack] {
+        logger.info("Getting similar tracks for: \(track) by \(artist) (autocorrect: \(autocorrect), limit: \(limit?.description ?? "default"))")
+        return try await manager.getSimilarTracks(.trackInfo(track, artist: artist), autoCorrect: autocorrect, limit: limit)
     }
     
     // MARK: - User Services

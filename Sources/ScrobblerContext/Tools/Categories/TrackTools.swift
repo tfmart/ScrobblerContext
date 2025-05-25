@@ -50,6 +50,12 @@ struct TrackTools {
                         "default": .int(10),
                         "minimum": .int(1),
                         "maximum": .int(50)
+                    ]),
+                    "page": .object([
+                        "type": .string("integer"),
+                        "description": .string("Page number for pagination (starts from 1)"),
+                        "default": .int(1),
+                        "minimum": .int(1)
                     ])
                 ]),
                 "required": .array([.string("query")])
@@ -72,14 +78,26 @@ struct TrackTools {
                         "type": .string("string"),
                         "description": .string("Name of the artist who performed the track")
                     ]),
-                    "autocorrect": .object([
-                        "type": .string("boolean"),
-                        "description": .string("Automatically correct misspelled track/artist names"),
-                        "default": .bool(true)
-                    ]),
                     "username": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username for personalized data (e.g., user's playcount, loved status)")
+                    ]),
+                    "autocorrect": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Automatically correct misspelled track/artist names"),
+                        "default": .bool(false)
+                    ]),
+                    "language": .object([
+                        "type": .string("string"),
+                        "description": .string("Language for track information (ISO 639-1 code). Supported: en, fr, de, it, es, pt, nl, sv, no, da, fi, is, ru, pl, cs, hu, ro, tr, el, ar, he, hi, zh, ja, ko, vi, th, id"),
+                        "default": .string("en"),
+                        "enum": .array([
+                            .string("en"), .string("fr"), .string("de"), .string("it"), .string("es"), .string("pt"),
+                            .string("nl"), .string("sv"), .string("no"), .string("da"), .string("fi"), .string("is"),
+                            .string("ru"), .string("pl"), .string("cs"), .string("hu"), .string("ro"), .string("tr"),
+                            .string("el"), .string("ar"), .string("he"), .string("hi"), .string("zh"), .string("ja"),
+                            .string("ko"), .string("vi"), .string("th"), .string("id")
+                        ])
                     ])
                 ]),
                 "required": .array([.string("track"), .string("artist")])
@@ -102,17 +120,14 @@ struct TrackTools {
                         "type": .string("string"),
                         "description": .string("Name of the artist who performed the track")
                     ]),
-                    "limit": .object([
-                        "type": .string("integer"),
-                        "description": .string("Maximum number of similar tracks to return (1-50)"),
-                        "default": .int(10),
-                        "minimum": .int(1),
-                        "maximum": .int(50)
-                    ]),
                     "autocorrect": .object([
                         "type": .string("boolean"),
                         "description": .string("Automatically correct misspelled track/artist names"),
                         "default": .bool(true)
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of similar tracks to return (optional, uses Last.fm default if not specified)")
                     ])
                 ]),
                 "required": .array([.string("track"), .string("artist")])
@@ -146,13 +161,14 @@ struct TrackTools {
             let tracks = try await lastFMService.searchTrack(
                 query: input.query,
                 artist: input.artist,
-                limit: input.limit
+                limit: input.limit,
+                page: input.page
             )
             
             if let artist = input.artist {
-                logger.info("Found \(tracks.count) tracks for query: '\(input.query)' by '\(artist)'")
+                logger.info("Found \(tracks.count) tracks for query: '\(input.query)' by '\(artist)' (page: \(input.page))")
             } else {
-                logger.info("Found \(tracks.count) tracks for query: '\(input.query)'")
+                logger.info("Found \(tracks.count) tracks for query: '\(input.query)' (page: \(input.page))")
             }
             
             let result = ResponseFormatters.format(tracks)
@@ -160,7 +176,7 @@ struct TrackTools {
             
         } catch {
             let errorContext = input.artist != nil ? "'\(input.query)' by '\(input.artist!)'" : "'\(input.query)'"
-            logger.error("Track search failed for \(errorContext): \(error)")
+            logger.error("Track search failed for \(errorContext) (page: \(input.page)): \(error)")
             return ToolResult.failure(error: "Track search failed: \(error.localizedDescription)")
         }
     }
@@ -171,7 +187,10 @@ struct TrackTools {
         do {
             let track = try await lastFMService.getTrackInfo(
                 track: input.track,
-                artist: input.artist
+                artist: input.artist,
+                username: input.username,
+                autocorrect: input.autocorrect,
+                language: input.language
             )
             
             logger.info("Retrieved track info for: '\(input.track)' by '\(input.artist)'")
@@ -189,11 +208,10 @@ struct TrackTools {
         let input = try parseGetSimilarTracksInput(arguments)
         
         do {
-            // Note: We'll need to extend LastFMService to support getSimilarTracks
-            // For now, let's add this method to the service
             let similarTracks = try await lastFMService.getSimilarTracks(
                 track: input.track,
                 artist: input.artist,
+                autocorrect: input.autocorrect,
                 limit: input.limit
             )
             
@@ -210,6 +228,20 @@ struct TrackTools {
     
     // MARK: - Input Parsing Helpers
     
+    private func validateLanguageCode(_ language: String) throws -> String {
+        let supportedLanguages = [
+            "en", "fr", "de", "it", "es", "pt", "nl", "sv", "no", "da",
+            "fi", "is", "ru", "pl", "cs", "hu", "ro", "tr", "el", "ar",
+            "he", "hi", "zh", "ja", "ko", "vi", "th", "id"
+        ]
+        
+        guard supportedLanguages.contains(language) else {
+            throw ToolError.invalidParameterType("language", expected: "supported ISO 639-1 code: \(supportedLanguages.joined(separator: ", "))")
+        }
+        
+        return language
+    }
+    
     private func parseSearchTrackInput(_ arguments: [String: (any Sendable)]) throws -> SearchTrackInput {
         guard let queryValue = arguments["query"] else {
             throw ToolError.missingParameter("query")
@@ -218,11 +250,13 @@ struct TrackTools {
         let query = "\(queryValue)"
         let artist = arguments.getString(for: "artist")
         let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
+        let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
         
         return SearchTrackInput(
             query: query,
             artist: artist,
-            limit: limit
+            limit: limit,
+            page: page
         )
     }
     
@@ -237,14 +271,17 @@ struct TrackTools {
         
         let track = "\(trackValue)"
         let artist = "\(artistValue)"
-        let autocorrect = arguments.getBool(for: "autocorrect") ?? true
         let username = arguments.getString(for: "username")
+        let autocorrect = arguments.getBool(for: "autocorrect") ?? false
+        let languageInput = arguments.getString(for: "language") ?? "en"
+        let language = try validateLanguageCode(languageInput)
         
         return GetTrackInfoInput(
             track: track,
             artist: artist,
             autocorrect: autocorrect,
-            username: username
+            username: username,
+            language: language
         )
     }
     
@@ -260,7 +297,7 @@ struct TrackTools {
         let track = "\(trackValue)"
         let artist = "\(artistValue)"
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
-        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
+        let limit = arguments.getInt(for: "limit") // Optional, can be nil
         
         return GetSimilarTracksInput(
             track: track,
@@ -269,32 +306,4 @@ struct TrackTools {
             autocorrect: autocorrect
         )
     }
-}
-
-// MARK: - Input Models for Track Tools
-
-struct GetTrackInfoInput: ToolInput {
-    let track: String
-    let artist: String
-    let autocorrect: Bool
-    let username: String?
-    
-    static let requiredParameters = ["track", "artist"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "autocorrect": true,
-        "username": ""
-    ]
-}
-
-struct GetSimilarTracksInput: ToolInput {
-    let track: String
-    let artist: String
-    let limit: Int
-    let autocorrect: Bool
-    
-    static let requiredParameters = ["track", "artist"]
-    static let optionalParameters: [String: (any Sendable)] = [
-        "limit": 10,
-        "autocorrect": true
-    ]
 }

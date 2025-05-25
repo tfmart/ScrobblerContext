@@ -125,11 +125,15 @@ struct ToolExecutor {
         case .searchTrack:
             try validateRequired(["query"], in: arguments)
             try validateOptionalLimit(in: arguments)
+            try validateOptionalPage(in: arguments)
             
         case .getTrackInfo, .getSimilarTracks:
             try validateRequired(["track", "artist"], in: arguments)
             if tool == .getSimilarTracks {
-                try validateOptionalLimit(in: arguments)
+                // Note: limit is optional for getSimilarTracks and can be nil
+                if arguments["limit"] != nil {
+                    _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
+                }
             }
             
         // User tools

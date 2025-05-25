@@ -96,10 +96,44 @@ struct SearchTrackInput: ToolInput {
     let query: String
     let artist: String?
     let limit: Int
+    let page: Int
     
     static let requiredParameters = ["query"]
-    static let optionalParameters: [String: (any Sendable)] = ["artist": "", "limit": 10]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "artist": "",
+        "limit": 10,
+        "page": 1
+    ]
 }
+
+struct GetTrackInfoInput: ToolInput {
+    let track: String
+    let artist: String
+    let autocorrect: Bool
+    let username: String?
+    let language: String
+    
+    static let requiredParameters = ["track", "artist"]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "autocorrect": true,
+        "username": "",
+        "language": "en"
+    ]
+}
+
+struct GetSimilarTracksInput: ToolInput {
+    let track: String
+    let artist: String
+    let limit: Int?
+    let autocorrect: Bool
+    
+    static let requiredParameters = ["track", "artist"]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "limit": 10,
+        "autocorrect": true
+    ]
+}
+
 
 // MARK: - User Tools
 struct GetUserRecentTracksInput: ToolInput {
