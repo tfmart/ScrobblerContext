@@ -1,5 +1,5 @@
 # Use the official Swift image
-FROM swift:5.8 as builder
+FROM swift:6.0 as builder
 
 # Set the working directory
 WORKDIR /app
