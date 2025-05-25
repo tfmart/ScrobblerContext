@@ -57,6 +57,46 @@ final class LastFMService: Sendable {
         return try await manager.getSimilarArtists(.artistName(name), limit: limit, autoCorrect: autocorrect)
     }
     
+    func addTagsToArtist(artist: String, tags: [String]) async throws -> Bool {
+        guard await isAuthenticated() else {
+            logger.error("Cannot add tags to artist: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Adding tags to artist: \(artist), tags: \(tags)")
+        return try await manager.addTags(toArtist: artist, tags: tags)
+    }
+    
+    func getCorrectedArtistName(artist: String) async throws -> SBKArtist? {
+        logger.info("Getting corrected artist name for: \(artist)")
+        return try await manager.getCorrectedArtistName(artist)
+    }
+    
+    func getArtistTags(name: String, user: String? = nil, autocorrect: Bool = true) async throws -> [SBKTag] {
+        logger.info("Getting tags for artist: \(name) (user: \(user ?? "all"), autocorrect: \(autocorrect))")
+        return try await manager.getTags(forArtist: .artistName(name), user: user, autocorrect: autocorrect)
+    }
+    
+    func getArtistTopAlbums(name: String, limit: Int = 50, page: Int = 1, autocorrect: Bool = true) async throws -> [SBKAlbum] {
+        logger.info("Getting top albums for artist: \(name) (limit: \(limit), page: \(page), autocorrect: \(autocorrect))")
+        return try await manager.getTopAlbums(forArtist: .artistName(name), limit: limit, page: page, autoCorrect: autocorrect)
+    }
+    
+    func getArtistTopTracks(name: String, limit: Int = 50, page: Int = 1, autocorrect: Bool = true) async throws -> [SBKTrack] {
+        logger.info("Getting top tracks for artist: \(name) (limit: \(limit), page: \(page), autocorrect: \(autocorrect))")
+        return try await manager.getArtistTopTracks(.artistName(name), limit: limit, page: page, autoCorrect: autocorrect)
+    }
+    
+    func removeTagFromArtist(artist: String, tag: String) async throws -> Bool {
+        guard await isAuthenticated() else {
+            logger.error("Cannot remove tag from artist: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Removing tag '\(tag)' from artist: \(artist)")
+        return try await manager.removeTag(fromArtist: artist, tag: tag)
+    }
+    
     // MARK: - Album Services
     
     func searchAlbum(query: String, limit: Int = 10, page: Int = 1) async throws -> [SBKAlbum] {

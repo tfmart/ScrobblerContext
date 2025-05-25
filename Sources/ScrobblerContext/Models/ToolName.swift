@@ -18,6 +18,12 @@ enum ToolName: String, CaseIterable {
     case searchArtist = "search_artist"
     case getArtistInfo = "get_artist_info"
     case getSimilarArtists = "get_similar_artists"
+    case addArtistTags = "add_artist_tags"
+    case getArtistCorrection = "get_artist_correction"
+    case getArtistTags = "get_artist_tags"
+    case getArtistTopAlbums = "get_artist_top_albums"
+    case getArtistTopTracks = "get_artist_top_tracks"
+    case removeArtistTag = "remove_artist_tag"
     
     // MARK: - Album Tools
     case searchAlbum = "search_album"
@@ -47,7 +53,7 @@ enum ToolName: String, CaseIterable {
         switch self {
         case .authenticateUser, .setSessionKey, .checkAuthStatus:
             return .authentication
-        case .searchArtist, .getArtistInfo, .getSimilarArtists:
+        case .searchArtist, .getArtistInfo, .getSimilarArtists, .addArtistTags, .getArtistCorrection, .getArtistTags, .getArtistTopAlbums, .getArtistTopTracks, .removeArtistTag:
             return .artist
         case .searchAlbum, .getAlbumInfo:
             return .album
@@ -63,7 +69,7 @@ enum ToolName: String, CaseIterable {
     /// Whether this tool requires authentication
     var requiresAuthentication: Bool {
         switch self {
-        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack:
+        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag:
             return true
         case .setSessionKey, .authenticateUser:
             return false // These tools establish authentication
@@ -87,6 +93,18 @@ enum ToolName: String, CaseIterable {
             return "Get detailed information about a specific artist"
         case .getSimilarArtists:
             return "Get artists similar to the specified artist"
+        case .addArtistTags:
+            return "Add tags to an artist (requires authentication)"
+        case .getArtistCorrection:
+            return "Get corrected artist name if available"
+        case .getArtistTags:
+            return "Get tags applied to an artist by a user or all users"
+        case .getArtistTopAlbums:
+            return "Get top albums for an artist"
+        case .getArtistTopTracks:
+            return "Get top tracks for an artist"
+        case .removeArtistTag:
+            return "Remove a tag from an artist (requires authentication)"
         case .searchAlbum:
             return "Search for albums on Last.fm by name"
         case .getAlbumInfo:

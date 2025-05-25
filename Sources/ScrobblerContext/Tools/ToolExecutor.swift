@@ -112,6 +112,23 @@ struct ToolExecutor {
             try validateRequired(["name"], in: arguments)
             try validateOptionalLimit(in: arguments)
             
+        case .addArtistTags:
+            try validateRequired(["artist", "tags"], in: arguments)
+            
+        case .getArtistCorrection:
+            try validateRequired(["artist"], in: arguments)
+            
+        case .getArtistTags:
+            try validateRequired(["name"], in: arguments)
+            
+        case .getArtistTopAlbums, .getArtistTopTracks:
+            try validateRequired(["name"], in: arguments)
+            try validateOptionalLimit(in: arguments)
+            try validateOptionalPage(in: arguments)
+            
+        case .removeArtistTag:
+            try validateRequired(["artist", "tag"], in: arguments)
+            
         // Album tools
         case .searchAlbum:
             try validateRequired(["query"], in: arguments)
@@ -131,7 +148,7 @@ struct ToolExecutor {
             try validateRequired(["track", "artist"], in: arguments)
             if tool == .getSimilarTracks {
                 // Note: limit is optional for getSimilarTracks and can be nil
-                if arguments["limit"] != nil {
+                if let limitValue = arguments["limit"] {
                     _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
                 }
             }

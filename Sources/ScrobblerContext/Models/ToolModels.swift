@@ -60,6 +60,69 @@ struct GetSimilarArtistsInput: ToolInput {
     ]
 }
 
+struct AddArtistTagsInput: ToolInput {
+    let artist: String
+    let tags: [String]
+    
+    static let requiredParameters = ["artist", "tags"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
+struct GetArtistCorrectionInput: ToolInput {
+    let artist: String
+    
+    static let requiredParameters = ["artist"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
+struct GetArtistTagsInput: ToolInput {
+    let name: String
+    let user: String?
+    let autocorrect: Bool
+    
+    static let requiredParameters = ["name"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "user": "",
+        "autocorrect": true
+    ]
+}
+
+struct GetArtistTopAlbumsInput: ToolInput {
+    let name: String
+    let limit: Int
+    let page: Int
+    let autocorrect: Bool
+    
+    static let requiredParameters = ["name"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "limit": 50,
+        "page": 1,
+        "autocorrect": true
+    ]
+}
+
+struct GetArtistTopTracksInput: ToolInput {
+    let name: String
+    let limit: Int
+    let page: Int
+    let autocorrect: Bool
+    
+    static let requiredParameters = ["name"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "limit": 50,
+        "page": 1,
+        "autocorrect": true
+    ]
+}
+
+struct RemoveArtistTagInput: ToolInput {
+    let artist: String
+    let tag: String
+    
+    static let requiredParameters = ["artist", "tag"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
 // MARK: - Album Tools
 struct SearchAlbumInput: ToolInput {
     let query: String
