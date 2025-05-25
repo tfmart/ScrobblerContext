@@ -45,6 +45,12 @@ struct AlbumTools {
                         "default": .int(10),
                         "minimum": .int(1),
                         "maximum": .int(50)
+                    ]),
+                    "page": .object([
+                        "type": .string("integer"),
+                        "description": .string("Page number for pagination (starts from 1)"),
+                        "default": .int(1),
+                        "minimum": .int(1)
                     ])
                 ]),
                 "required": .array([.string("query")])
@@ -78,8 +84,15 @@ struct AlbumTools {
                     ]),
                     "language": .object([
                         "type": .string("string"),
-                        "description": .string("Language for album information (ISO 639-1 code, e.g., 'en', 'es', 'fr')"),
-                        "default": .string("en")
+                        "description": .string("Language for album information (ISO 639-1 code). Supported: en, fr, de, it, es, pt, nl, sv, no, da, fi, is, ru, pl, cs, hu, ro, tr, el, ar, he, hi, zh, ja, ko, vi, th, id"),
+                        "default": .string("en"),
+                        "enum": .array([
+                            .string("en"), .string("fr"), .string("de"), .string("it"), .string("es"), .string("pt"),
+                            .string("nl"), .string("sv"), .string("no"), .string("da"), .string("fi"), .string("is"),
+                            .string("ru"), .string("pl"), .string("cs"), .string("hu"), .string("ro"), .string("tr"),
+                            .string("el"), .string("ar"), .string("he"), .string("hi"), .string("zh"), .string("ja"),
+                            .string("ko"), .string("vi"), .string("th"), .string("id")
+                        ])
                     ])
                 ]),
                 "required": .array([.string("album"), .string("artist")])
@@ -110,16 +123,17 @@ struct AlbumTools {
         do {
             let albums = try await lastFMService.searchAlbum(
                 query: input.query,
-                limit: input.limit
+                limit: input.limit,
+                page: input.page
             )
             
-            logger.info("Found \(albums.count) albums for query: \(input.query)")
+            logger.info("Found \(albums.count) albums for query: \(input.query) (page: \(input.page))")
             
             let result = ResponseFormatters.format(albums)
             return ToolResult.success(data: result)
             
         } catch {
-            logger.error("Album search failed for query '\(input.query)': \(error)")
+            logger.error("Album search failed for query '\(input.query)' (page: \(input.page)): \(error)")
             return ToolResult.failure(error: "Album search failed: \(error.localizedDescription)")
         }
     }
@@ -128,11 +142,12 @@ struct AlbumTools {
         let input = try parseGetAlbumInfoInput(arguments)
         
         do {
-            // For now, we'll use the basic getAlbumInfo method
-            // In the future, we can extend LastFMService to support additional parameters
             let album = try await lastFMService.getAlbumInfo(
                 album: input.album,
-                artist: input.artist
+                artist: input.artist,
+                autocorrect: input.autocorrect,
+                username: input.username,
+                language: input.language
             )
             
             logger.info("Retrieved album info for: '\(input.album)' by \(input.artist)")
@@ -148,6 +163,20 @@ struct AlbumTools {
     
     // MARK: - Input Parsing Helpers
     
+    private func validateLanguageCode(_ language: String) throws -> String {
+        let supportedLanguages = [
+            "en", "fr", "de", "it", "es", "pt", "nl", "sv", "no", "da",
+            "fi", "is", "ru", "pl", "cs", "hu", "ro", "tr", "el", "ar",
+            "he", "hi", "zh", "ja", "ko", "vi", "th", "id"
+        ]
+        
+        guard supportedLanguages.contains(language) else {
+            throw ToolError.invalidParameterType("language", expected: "supported ISO 639-1 code: \(supportedLanguages.joined(separator: ", "))")
+        }
+        
+        return language
+    }
+    
     private func parseSearchAlbumInput(_ arguments: [String: (any Sendable)]) throws -> SearchAlbumInput {
         guard let queryValue = arguments["query"] else {
             throw ToolError.missingParameter("query")
@@ -155,10 +184,12 @@ struct AlbumTools {
         
         let query = "\(queryValue)"
         let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 10) ?? 10
+        let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
         
         return SearchAlbumInput(
             query: query,
-            limit: limit
+            limit: limit,
+            page: page
         )
     }
     
@@ -175,7 +206,8 @@ struct AlbumTools {
         let artist = "\(artistValue)"
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
         let username = arguments.getString(for: "username")
-        let language = arguments.getString(for: "language") ?? "en"
+        let languageInput = arguments.getString(for: "language") ?? "en"
+        let language = try validateLanguageCode(languageInput)
         
         return GetAlbumInfoInput(
             album: album,

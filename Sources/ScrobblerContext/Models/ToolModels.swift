@@ -67,9 +67,13 @@ struct GetSimilarArtistsInput: ToolInput {
 struct SearchAlbumInput: ToolInput {
     let query: String
     let limit: Int
+    let page: Int
     
     static let requiredParameters = ["query"]
-    static let optionalParameters: [String: (any Sendable)] = ["limit": 10]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "limit": 10,
+        "page": 1
+    ]
 }
 
 struct GetAlbumInfoInput: ToolInput {

@@ -59,14 +59,23 @@ final class LastFMService: Sendable {
     
     // MARK: - Album Services
     
-    func searchAlbum(query: String, limit: Int = 10) async throws -> [SBKAlbum] {
-        logger.info("Searching for album: \(query) (limit: \(limit))")
-        return try await manager.search(album: query, limit: limit)
+    func searchAlbum(query: String, limit: Int = 10, page: Int = 1) async throws -> [SBKAlbum] {
+        logger.info("Searching for album: \(query) (limit: \(limit), page: \(page))")
+        return try await manager.search(album: query, page: page, limit: limit)
     }
     
-    func getAlbumInfo(album: String, artist: String) async throws -> SBKAlbum {
-        logger.info("Getting album info for: \(album) by \(artist)")
-        return try await manager.getInfo(forAlbum: .albumArtist(album: album, artist: artist))
+    func getAlbumInfo(album: String, artist: String, autocorrect: Bool = true, username: String? = nil, language: String = "en") async throws -> SBKAlbum {
+        logger.info("Getting album info for: \(album) by \(artist) (autocorrect: \(autocorrect), username: \(username ?? "none"), language: \(language))")
+        
+        // Convert string language code to SBKLanguageCode
+        let languageCode = SBKLanguageCode(rawValue: language) ?? .english
+        
+        return try await manager.getInfo(
+            forAlbum: .albumArtist(album: album, artist: artist),
+            autoCorrect: autocorrect,
+            username: username,
+            languageCode: languageCode
+        )
     }
     
     // MARK: - Track Services

@@ -116,6 +116,7 @@ struct ToolExecutor {
         case .searchAlbum:
             try validateRequired(["query"], in: arguments)
             try validateOptionalLimit(in: arguments)
+            try validateOptionalPage(in: arguments)
             
         case .getAlbumInfo:
             try validateRequired(["album", "artist"], in: arguments)
