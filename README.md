@@ -1,6 +1,6 @@
 # ScrobblerContext - Last.fm MCP Server
 
-A Model Context Protocol (MCP) server that provides comprehensive access to Last.fm's API, built in Swift. Enables AI assistants to search music, manage user libraries, and scrobble tracks.
+A Model Context Protocol (MCP) server that provides access to Last.fm's API, built in Swift. Enables AI assistants to search for data suchs as songs, artists and albums on Last.fm, manage user libraries, and scrobble tracks.
 
 ## Features
 
@@ -69,9 +69,9 @@ A Model Context Protocol (MCP) server that provides comprehensive access to Last
 
 1. **Clone and build**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/tfmart/ScrobblerContext
    cd ScrobblerContext
-   swift build -c release
+   swift build
    ```
 
 2. **Set environment variables**:
@@ -107,10 +107,23 @@ Add to your Claude Desktop MCP configuration:
 }
 ```
 
+### Cursor
+
+```json
+{
+  "mcpServers": {
+    "swift-version-server": {
+      "type": "stdio",
+      "command": "path/to/ScrobblerContext"
+    }
+  }
+}
+```
+
 ### Other MCP Clients
 
 Configure your MCP client to:
-1. Launch the `ScrobblerContext` executable
+1. Create the `ScrobblerContext` executable
 2. Set the required environment variables
 3. Communicate over stdio
 
