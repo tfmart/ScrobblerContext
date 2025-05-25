@@ -180,6 +180,62 @@ struct ResponseFormatters {
         return result
     }
     
+    // MARK: - Tag Formatters
+    
+    static func format(_ tags: [SBKTag]) -> [String: Any] {
+        let formattedTags = tags.map { tag -> [String: Any] in
+            var tagDict: [String: Any] = [
+                "name": tag.name,
+                "url": tag.url?.absoluteString ?? ""
+            ]
+            
+            if let count = tag.count {
+                tagDict["count"] = count
+            }
+            
+            return tagDict
+        }
+        
+        return ["tags": formattedTags]
+    }
+    
+    // MARK: - Artist Correction Formatters
+    
+    static func formatArtistCorrection(_ artist: SBKArtist?) -> [String: Any] {
+        if let correctedArtist = artist {
+            return [
+                "corrected": true,
+                "corrected_artist": format(correctedArtist)
+            ]
+        } else {
+            return [
+                "corrected": false,
+                "message": "No correction available"
+            ]
+        }
+    }
+    
+    // MARK: - Tag Operation Result Formatters
+    
+    static func formatTagOperationResult(success: Bool, operation: String, artist: String, tags: [String]? = nil, tag: String? = nil) -> [String: Any] {
+        var result: [String: Any] = [
+            "success": success,
+            "operation": operation,
+            "artist": artist,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+        
+        if let tags = tags {
+            result["tags"] = tags
+        }
+        
+        if let tag = tag {
+            result["tag"] = tag
+        }
+        
+        return result
+    }
+    
     // MARK: - User Data Formatters
     
     static func format(_ recentTracks: SBKSearchResult<SBKScrobbledTrack>) -> [String: Any] {

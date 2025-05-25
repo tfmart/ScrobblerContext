@@ -24,7 +24,11 @@ struct AlbumTools {
     static func createTools() -> [Tool] {
         return [
             createSearchAlbumTool(),
-            createGetAlbumInfoTool()
+            createGetAlbumInfoTool(),
+            createAddAlbumTagsTool(),
+            createGetAlbumTagsTool(),
+            createGetAlbumTopTagsTool(),
+            createRemoveAlbumTagTool()
         ]
     }
     
@@ -100,6 +104,116 @@ struct AlbumTools {
         )
     }
     
+    private static func createAddAlbumTagsTool() -> Tool {
+        return Tool(
+            name: ToolName.addAlbumTags.rawValue,
+            description: ToolName.addAlbumTags.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "album": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the album to add tags to")
+                    ]),
+                    "artist": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the artist who created the album")
+                    ]),
+                    "tags": .object([
+                        "type": .string("array"),
+                        "items": .object([
+                            "type": .string("string")
+                        ]),
+                        "description": .string("Array of tags to add to the album (maximum 10 tags)"),
+                        "maxItems": .int(10)
+                    ])
+                ]),
+                "required": .array([.string("album"), .string("artist"), .string("tags")])
+            ])
+        )
+    }
+    
+    private static func createGetAlbumTagsTool() -> Tool {
+        return Tool(
+            name: ToolName.getAlbumTags.rawValue,
+            description: ToolName.getAlbumTags.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "album": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the album to get tags for")
+                    ]),
+                    "artist": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the artist who created the album")
+                    ]),
+                    "autocorrect": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Automatically correct misspelled album/artist names"),
+                        "default": .bool(true)
+                    ]),
+                    "username": .object([
+                        "type": .string("string"),
+                        "description": .string("Username to get tags from (optional, if not provided returns all user tags)")
+                    ])
+                ]),
+                "required": .array([.string("album"), .string("artist")])
+            ])
+        )
+    }
+    
+    private static func createGetAlbumTopTagsTool() -> Tool {
+        return Tool(
+            name: ToolName.getAlbumTopTags.rawValue,
+            description: ToolName.getAlbumTopTags.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "album": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the album to get top tags for")
+                    ]),
+                    "artist": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the artist who created the album")
+                    ]),
+                    "autocorrect": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Automatically correct misspelled album/artist names"),
+                        "default": .bool(true)
+                    ])
+                ]),
+                "required": .array([.string("album"), .string("artist")])
+            ])
+        )
+    }
+    
+    private static func createRemoveAlbumTagTool() -> Tool {
+        return Tool(
+            name: ToolName.removeAlbumTag.rawValue,
+            description: ToolName.removeAlbumTag.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "album": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the album to remove the tag from")
+                    ]),
+                    "artist": .object([
+                        "type": .string("string"),
+                        "description": .string("Name of the artist who created the album")
+                    ]),
+                    "tag": .object([
+                        "type": .string("string"),
+                        "description": .string("Tag to remove from the album")
+                    ])
+                ]),
+                "required": .array([.string("album"), .string("artist"), .string("tag")])
+            ])
+        )
+    }
+    
     // MARK: - Tool Execution
     
     func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
@@ -110,6 +224,14 @@ struct AlbumTools {
             return try await executeSearchAlbum(arguments: arguments)
         case .getAlbumInfo:
             return try await executeGetAlbumInfo(arguments: arguments)
+        case .addAlbumTags:
+            return try await executeAddAlbumTags(arguments: arguments)
+        case .getAlbumTags:
+            return try await executeGetAlbumTags(arguments: arguments)
+        case .getAlbumTopTags:
+            return try await executeGetAlbumTopTags(arguments: arguments)
+        case .removeAlbumTag:
+            return try await executeRemoveAlbumTag(arguments: arguments)
         default:
             throw ToolError.lastFMError("Invalid album tool: \(toolName.rawValue)")
         }
@@ -158,6 +280,107 @@ struct AlbumTools {
         } catch {
             logger.error("Failed to get album info for '\(input.album)' by '\(input.artist)': \(error)")
             return ToolResult.failure(error: "Failed to get album info: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeAddAlbumTags(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseAddAlbumTagsInput(arguments)
+        
+        do {
+            let success = try await lastFMService.addTagsToAlbum(
+                album: input.album,
+                artist: input.artist,
+                tags: input.tags
+            )
+            
+            logger.info("Add tags operation for album '\(input.album)' by '\(input.artist)': \(success ? "success" : "failed")")
+            
+            let result = ResponseFormatters.formatTagOperationResult(
+                success: success,
+                operation: "add_tags",
+                artist: input.artist,
+                tags: input.tags
+            )
+            var resultWithAlbum = result
+            resultWithAlbum["album"] = input.album
+            
+            return ToolResult.success(data: resultWithAlbum)
+            
+        } catch {
+            logger.error("Failed to add tags to album '\(input.album)' by '\(input.artist)': \(error)")
+            return ToolResult.failure(error: "Failed to add tags: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeGetAlbumTags(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseGetAlbumTagsInput(arguments)
+        
+        do {
+            let tags = try await lastFMService.getAlbumTags(
+                album: input.album,
+                artist: input.artist,
+                autocorrect: input.autocorrect,
+                username: input.username
+            )
+            
+            logger.info("Retrieved \(tags.count) tags for album: '\(input.album)' by '\(input.artist)'")
+            
+            let result = ResponseFormatters.format(tags)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to get tags for album '\(input.album)' by '\(input.artist)': \(error)")
+            return ToolResult.failure(error: "Failed to get album tags: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeGetAlbumTopTags(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseGetAlbumTopTagsInput(arguments)
+        
+        do {
+            let tags = try await lastFMService.getAlbumTopTags(
+                album: input.album,
+                artist: input.artist,
+                autocorrect: input.autocorrect
+            )
+            
+            logger.info("Retrieved \(tags.count) top tags for album: '\(input.album)' by '\(input.artist)'")
+            
+            let result = ResponseFormatters.format(tags)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to get top tags for album '\(input.album)' by '\(input.artist)': \(error)")
+            return ToolResult.failure(error: "Failed to get album top tags: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeRemoveAlbumTag(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseRemoveAlbumTagInput(arguments)
+        
+        do {
+            let success = try await lastFMService.removeTagFromAlbum(
+                album: input.album,
+                artist: input.artist,
+                tag: input.tag
+            )
+            
+            logger.info("Remove tag operation for album '\(input.album)' by '\(input.artist)': \(success ? "success" : "failed")")
+            
+            let result = ResponseFormatters.formatTagOperationResult(
+                success: success,
+                operation: "remove_tag",
+                artist: input.artist,
+                tag: input.tag
+            )
+            var resultWithAlbum = result
+            resultWithAlbum["album"] = input.album
+            
+            return ToolResult.success(data: resultWithAlbum)
+            
+        } catch {
+            logger.error("Failed to remove tag from album '\(input.album)' by '\(input.artist)': \(error)")
+            return ToolResult.failure(error: "Failed to remove tag: \(error.localizedDescription)")
         }
     }
     
@@ -216,5 +439,102 @@ struct AlbumTools {
             username: username,
             language: language
         )
+    }
+    
+    private func parseAddAlbumTagsInput(_ arguments: [String: (any Sendable)]) throws -> AddAlbumTagsInput {
+        guard let albumValue = arguments["album"] else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artistValue = arguments["artist"] else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tagsValue = arguments["tags"] else {
+            throw ToolError.missingParameter("tags")
+        }
+        
+        let album = "\(albumValue)"
+        let artist = "\(artistValue)"
+        
+        // Parse tags array
+        var tags: [String] = []
+        if let tagsArray = tagsValue as? [Any] {
+            tags = tagsArray.compactMap { "\($0)" }
+        } else {
+            throw ToolError.invalidParameterType("tags", expected: "array of strings")
+        }
+        
+        guard !tags.isEmpty else {
+            throw ToolError.invalidParameterType("tags", expected: "non-empty array of strings")
+        }
+        
+        guard tags.count <= 10 else {
+            throw ToolError.invalidParameterType("tags", expected: "maximum 10 tags")
+        }
+        
+        return AddAlbumTagsInput(album: album, artist: artist, tags: tags)
+    }
+    
+    private func parseGetAlbumTagsInput(_ arguments: [String: (any Sendable)]) throws -> GetAlbumTagsInput {
+        guard let albumValue = arguments["album"] else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artistValue = arguments["artist"] else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        let album = "\(albumValue)"
+        let artist = "\(artistValue)"
+        let autocorrect = arguments.getBool(for: "autocorrect") ?? true
+        let username = arguments.getString(for: "username")
+        
+        return GetAlbumTagsInput(
+            album: album,
+            artist: artist,
+            autocorrect: autocorrect,
+            username: username
+        )
+    }
+    
+    private func parseGetAlbumTopTagsInput(_ arguments: [String: (any Sendable)]) throws -> GetAlbumTopTagsInput {
+        guard let albumValue = arguments["album"] else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artistValue = arguments["artist"] else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        let album = "\(albumValue)"
+        let artist = "\(artistValue)"
+        let autocorrect = arguments.getBool(for: "autocorrect") ?? true
+        
+        return GetAlbumTopTagsInput(
+            album: album,
+            artist: artist,
+            autocorrect: autocorrect
+        )
+    }
+    
+    private func parseRemoveAlbumTagInput(_ arguments: [String: (any Sendable)]) throws -> RemoveAlbumTagInput {
+        guard let albumValue = arguments["album"] else {
+            throw ToolError.missingParameter("album")
+        }
+        
+        guard let artistValue = arguments["artist"] else {
+            throw ToolError.missingParameter("artist")
+        }
+        
+        guard let tagValue = arguments["tag"] else {
+            throw ToolError.missingParameter("tag")
+        }
+        
+        let album = "\(albumValue)"
+        let artist = "\(artistValue)"
+        let tag = "\(tagValue)"
+        
+        return RemoveAlbumTagInput(album: album, artist: artist, tag: tag)
     }
 }

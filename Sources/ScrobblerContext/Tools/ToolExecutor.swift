@@ -138,6 +138,15 @@ struct ToolExecutor {
         case .getAlbumInfo:
             try validateRequired(["album", "artist"], in: arguments)
             
+        case .addAlbumTags:
+            try validateRequired(["album", "artist", "tags"], in: arguments)
+            
+        case .getAlbumTags, .getAlbumTopTags:
+            try validateRequired(["album", "artist"], in: arguments)
+            
+        case .removeAlbumTag:
+            try validateRequired(["album", "artist", "tag"], in: arguments)
+            
         // Track tools
         case .searchTrack:
             try validateRequired(["query"], in: arguments)

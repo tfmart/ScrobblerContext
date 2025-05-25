@@ -148,6 +148,48 @@ struct GetAlbumInfoInput: ToolInput {
     ]
 }
 
+struct AddAlbumTagsInput: ToolInput {
+    let album: String
+    let artist: String
+    let tags: [String]
+    
+    static let requiredParameters = ["album", "artist", "tags"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
+struct GetAlbumTagsInput: ToolInput {
+    let album: String
+    let artist: String
+    let autocorrect: Bool
+    let username: String?
+    
+    static let requiredParameters = ["album", "artist"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "autocorrect": true,
+        "username": ""
+    ]
+}
+
+struct GetAlbumTopTagsInput: ToolInput {
+    let album: String
+    let artist: String
+    let autocorrect: Bool
+    
+    static let requiredParameters = ["album", "artist"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "autocorrect": true
+    ]
+}
+
+struct RemoveAlbumTagInput: ToolInput {
+    let album: String
+    let artist: String
+    let tag: String
+    
+    static let requiredParameters = ["album", "artist", "tag"]
+    static let optionalParameters: [String: (any Sendable)?] = [:]
+}
+
 // MARK: - Track Tools
 struct SearchTrackInput: ToolInput {
     let query: String

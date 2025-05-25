@@ -118,6 +118,36 @@ final class LastFMService: Sendable {
         )
     }
     
+    func addTagsToAlbum(album: String, artist: String, tags: [String]) async throws -> Bool {
+        guard await isAuthenticated() else {
+            logger.error("Cannot add tags to album: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Adding tags to album: \(album) by \(artist), tags: \(tags)")
+        return try await manager.addTags(toAlbum: album, artist: artist, tags: tags)
+    }
+    
+    func getAlbumTags(album: String, artist: String, autocorrect: Bool = true, username: String? = nil) async throws -> [SBKTag] {
+        logger.info("Getting tags for album: \(album) by \(artist) (autocorrect: \(autocorrect), username: \(username ?? "none"))")
+        return try await manager.getTags(forAlbum: .albumArtist(album: album, artist: artist), autoCorrect: autocorrect, username: username)
+    }
+    
+    func getAlbumTopTags(album: String, artist: String, autocorrect: Bool = true) async throws -> [SBKTag] {
+        logger.info("Getting top tags for album: \(album) by \(artist) (autocorrect: \(autocorrect))")
+        return try await manager.getTopTags(forAlbum: .albumArtist(album: album, artist: artist), autoCorrect: autocorrect)
+    }
+    
+    func removeTagFromAlbum(album: String, artist: String, tag: String) async throws -> Bool {
+        guard await isAuthenticated() else {
+            logger.error("Cannot remove tag from album: User is not authenticated")
+            throw ToolError.authenticationRequired
+        }
+        
+        logger.info("Removing tag '\(tag)' from album: \(album) by \(artist)")
+        return try await manager.removeTag(fromAlbum: album, artist: artist, tag: tag)
+    }
+    
     // MARK: - Track Services
     
     func searchTrack(query: String, artist: String? = nil, limit: Int = 10, page: Int = 1) async throws -> [SBKTrack] {

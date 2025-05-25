@@ -28,6 +28,10 @@ enum ToolName: String, CaseIterable {
     // MARK: - Album Tools
     case searchAlbum = "search_album"
     case getAlbumInfo = "get_album_info"
+    case addAlbumTags = "add_album_tags"
+    case getAlbumTags = "get_album_tags"
+    case getAlbumTopTags = "get_album_top_tags"
+    case removeAlbumTag = "remove_album_tag"
     
     // MARK: - Track Tools
     case searchTrack = "search_track"
@@ -55,7 +59,7 @@ enum ToolName: String, CaseIterable {
             return .authentication
         case .searchArtist, .getArtistInfo, .getSimilarArtists, .addArtistTags, .getArtistCorrection, .getArtistTags, .getArtistTopAlbums, .getArtistTopTracks, .removeArtistTag:
             return .artist
-        case .searchAlbum, .getAlbumInfo:
+        case .searchAlbum, .getAlbumInfo, .addAlbumTags, .getAlbumTags, .getAlbumTopTags, .removeAlbumTag:
             return .album
         case .searchTrack, .getTrackInfo, .getSimilarTracks:
             return .track
@@ -69,7 +73,7 @@ enum ToolName: String, CaseIterable {
     /// Whether this tool requires authentication
     var requiresAuthentication: Bool {
         switch self {
-        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag:
+        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag, .addAlbumTags, .removeAlbumTag:
             return true
         case .setSessionKey, .authenticateUser:
             return false // These tools establish authentication
@@ -109,6 +113,14 @@ enum ToolName: String, CaseIterable {
             return "Search for albums on Last.fm by name"
         case .getAlbumInfo:
             return "Get detailed information about a specific album"
+        case .addAlbumTags:
+            return "Add tags to an album (requires authentication)"
+        case .getAlbumTags:
+            return "Get tags applied to an album by a user or all users"
+        case .getAlbumTopTags:
+            return "Get top tags for an album ordered by popularity"
+        case .removeAlbumTag:
+            return "Remove a tag from an album (requires authentication)"
         case .searchTrack:
             return "Search for tracks on Last.fm by name"
         case .getTrackInfo:
