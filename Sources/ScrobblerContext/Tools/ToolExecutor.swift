@@ -82,77 +82,71 @@ struct ToolExecutor {
     func validateToolArguments(toolName: String, arguments: [String: (any Sendable)]) throws {
         logger.debug("Validating arguments for tool: \(toolName)")
         
-        // This is a basic validation - in a more sophisticated implementation,
-        // you might validate against the actual JSON schema defined in the tools
+        // Convert string to ToolName enum for type-safe validation
+        guard let tool = ToolName(rawValue: toolName) else {
+            throw ToolError.lastFMError("Unknown tool: \(toolName)")
+        }
         
-        switch toolName {
+        switch tool {
         // Authentication tools
-        case "authenticate_user":
+        case .authenticateUser:
             try validateRequired(["username", "password"], in: arguments)
             
-        case "set_session_key":
+        case .setSessionKey:
             try validateRequired(["session_key"], in: arguments)
             
+        case .checkAuthStatus:
+            // No required parameters
+            break
+            
         // Artist tools
-        case "search_artist":
+        case .searchArtist:
             try validateRequired(["query"], in: arguments)
             try validateOptionalLimit(in: arguments)
             
-        case "get_artist_info":
+        case .getArtistInfo:
             try validateRequired(["name"], in: arguments)
             
-        case "get_similar_artists":
+        case .getSimilarArtists:
             try validateRequired(["name"], in: arguments)
             try validateOptionalLimit(in: arguments)
             
         // Album tools
-        case "search_album":
+        case .searchAlbum:
             try validateRequired(["query"], in: arguments)
             try validateOptionalLimit(in: arguments)
             
-        case "get_album_info":
+        case .getAlbumInfo:
             try validateRequired(["album", "artist"], in: arguments)
             
         // Track tools
-        case "search_track":
+        case .searchTrack:
             try validateRequired(["query"], in: arguments)
             try validateOptionalLimit(in: arguments)
             
-        case "get_track_info", "get_similar_tracks":
+        case .getTrackInfo, .getSimilarTracks:
             try validateRequired(["track", "artist"], in: arguments)
-            if toolName == "get_similar_tracks" {
+            if tool == .getSimilarTracks {
                 try validateOptionalLimit(in: arguments)
             }
             
         // User tools
-        case "get_user_recent_tracks", "get_user_top_artists", "get_user_top_tracks", "get_user_info":
+        case .getUserRecentTracks:
             try validateRequired(["username"], in: arguments)
-            // For tools with limit/page parameters
-            if toolName != "get_user_info" {
-                try validateOptionalUserLimit(toolName: toolName, in: arguments)
-                try validateOptionalPage(in: arguments)
-            }
+            try validateOptionalUserLimit(toolName: tool.rawValue, in: arguments)
+            try validateOptionalPage(in: arguments)
             
-        // Future tool validations
-        case "search_album", "search_track":
-            try validateRequired(["query"], in: arguments)
-            
-        case "get_album_info":
-            try validateRequired(["album", "artist"], in: arguments)
-            
-        case "get_user_recent_tracks", "get_user_top_artists":
+        case .getUserTopArtists, .getUserTopTracks:
             try validateRequired(["username"], in: arguments)
+            try validateOptionalUserLimit(toolName: tool.rawValue, in: arguments)
+            try validateOptionalPage(in: arguments)
             
-        case "scrobble_track":
-            try validateRequired(["artist", "track"], in: arguments)
+        case .getUserInfo:
+            try validateRequired(["username"], in: arguments)
             
         // Scrobble tools
-        case "scrobble_track", "update_now_playing", "love_track", "unlove_track":
+        case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack:
             try validateRequired(["artist", "track"], in: arguments)
-            
-        default:
-            // For tools we don't know about, skip validation
-            logger.debug("No specific validation rules for tool: \(toolName)")
         }
     }
     
@@ -171,7 +165,7 @@ struct ToolExecutor {
     }
     
     private func validateOptionalUserLimit(toolName: String, in arguments: [String: (any Sendable)]) throws {
-        let maxLimit = toolName == "get_user_recent_tracks" ? 200 : 1000
+        let maxLimit = toolName == ToolName.getUserRecentTracks.rawValue ? 200 : 1000
         _ = try arguments.getValidatedInt(for: "limit", min: 1, max: maxLimit)
     }
     

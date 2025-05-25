@@ -125,9 +125,15 @@ struct ScrobbleTrackInput: ToolInput {
     let artist: String
     let track: String
     let album: String?
+    let timestamp: Int?
+    let duration: Int?
     
     static let requiredParameters = ["artist", "track"]
-    static let optionalParameters: [String: (any Sendable)] = ["album": ""]
+    static let optionalParameters: [String: (any Sendable)] = [
+        "album": "",
+        "timestamp": 0,
+        "duration": 0
+    ]
 }
 
 // MARK: - Tool Output Models

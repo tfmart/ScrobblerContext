@@ -7,19 +7,6 @@
 
 import Foundation
 
-// MARK: - Data Extensions
-
-extension Data {
-    /// Convert Data to pretty-printed JSON string
-    func prettyPrintedJSON() throws -> String {
-        let jsonObject = try JSONSerialization.jsonObject(with: self)
-        let prettyData = try JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted])
-        guard let prettyString = String(data: prettyData, encoding: .utf8) else {
-            throw DataExtensionError.stringConversionFailed
-        }
-        return prettyString
-    }
-}
 
 // MARK: - Dictionary Extensions
 

@@ -5,7 +5,6 @@
 //  Created by Tomas Martins on 24/05/25.
 //
 
-
 import Foundation
 import MCP
 @preconcurrency import ScrobbleKit
@@ -32,8 +31,8 @@ struct AuthTools {
     
     private static func createAuthenticateTool() -> Tool {
         return Tool(
-            name: "authenticate_user",
-            description: "Authenticate with Last.fm using username and password",
+            name: ToolName.authenticateUser.rawValue,
+            description: ToolName.authenticateUser.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -53,8 +52,8 @@ struct AuthTools {
     
     private static func createSetSessionKeyTool() -> Tool {
         return Tool(
-            name: "set_session_key",
-            description: "Set an existing Last.fm session key for authentication",
+            name: ToolName.setSessionKey.rawValue,
+            description: ToolName.setSessionKey.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -70,8 +69,8 @@ struct AuthTools {
     
     private static func createCheckAuthStatusTool() -> Tool {
         return Tool(
-            name: "check_auth_status",
-            description: "Check if the user is currently authenticated with Last.fm",
+            name: ToolName.checkAuthStatus.rawValue,
+            description: ToolName.checkAuthStatus.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([:]),
@@ -82,24 +81,24 @@ struct AuthTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: Any]) async throws -> ToolResult {
-        logger.info("Executing auth tool: \(toolName)")
+    func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        logger.info("Executing auth tool: \(toolName.rawValue)")
         
         switch toolName {
-        case "authenticate_user":
+        case .authenticateUser:
             return try await executeAuthenticate(arguments: arguments)
-        case "set_session_key":
+        case .setSessionKey:
             return try await executeSetSessionKey(arguments: arguments)
-        case "check_auth_status":
+        case .checkAuthStatus:
             return try await executeCheckAuthStatus(arguments: arguments)
         default:
-            throw ToolError.lastFMError("Unknown authentication tool: \(toolName)")
+            throw ToolError.lastFMError("Invalid authentication tool: \(toolName.rawValue)")
         }
     }
     
     // MARK: - Individual Tool Implementations
     
-    private func executeAuthenticate(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeAuthenticate(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let input = try parseAuthenticateInput(arguments)
         
         do {
@@ -123,7 +122,7 @@ struct AuthTools {
         }
     }
     
-    private func executeSetSessionKey(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeSetSessionKey(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         guard let sessionKeyValue = arguments["session_key"] else {
             throw ToolError.missingParameter("session_key")
         }
@@ -143,7 +142,7 @@ struct AuthTools {
         }
     }
     
-    private func executeCheckAuthStatus(arguments: [String: Any]) async throws -> ToolResult {
+    private func executeCheckAuthStatus(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let isAuthenticated = await lastFMService.isAuthenticated()
         
         let result: [String: Any] = [
@@ -156,7 +155,7 @@ struct AuthTools {
     
     // MARK: - Input Parsing Helpers
     
-    private func parseAuthenticateInput(_ arguments: [String: Any]) throws -> AuthenticateInput {
+    private func parseAuthenticateInput(_ arguments: [String: (any Sendable)]) throws -> AuthenticateInput {
         guard let usernameValue = arguments["username"] else {
             throw ToolError.missingParameter("username")
         }

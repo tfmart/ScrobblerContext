@@ -32,8 +32,8 @@ struct ScrobbleTools {
     
     private static func createScrobbleTrackTool() -> Tool {
         return Tool(
-            name: "scrobble_track",
-            description: "Scrobble a track to the authenticated user's Last.fm profile (requires authentication)",
+            name: ToolName.scrobbleTrack.rawValue,
+            description: ToolName.scrobbleTrack.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -65,8 +65,8 @@ struct ScrobbleTools {
     
     private static func createUpdateNowPlayingTool() -> Tool {
         return Tool(
-            name: "update_now_playing",
-            description: "Update the currently playing track for the authenticated user (requires authentication)",
+            name: ToolName.updateNowPlaying.rawValue,
+            description: ToolName.updateNowPlaying.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -98,8 +98,8 @@ struct ScrobbleTools {
     
     private static func createLoveTrackTool() -> Tool {
         return Tool(
-            name: "love_track",
-            description: "Mark a track as loved for the authenticated user (requires authentication)",
+            name: ToolName.loveTrack.rawValue,
+            description: ToolName.loveTrack.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -119,8 +119,8 @@ struct ScrobbleTools {
     
     private static func createUnloveTrackTool() -> Tool {
         return Tool(
-            name: "unlove_track",
-            description: "Remove a track from the authenticated user's loved tracks (requires authentication)",
+            name: ToolName.unloveTrack.rawValue,
+            description: ToolName.unloveTrack.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -140,20 +140,20 @@ struct ScrobbleTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
-        logger.info("Executing scrobble tool: \(toolName)")
+    func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        logger.info("Executing scrobble tool: \(toolName.rawValue)")
         
         switch toolName {
-        case "scrobble_track":
+        case .scrobbleTrack:
             return try await executeScrobbleTrack(arguments: arguments)
-        case "update_now_playing":
+        case .updateNowPlaying:
             return try await executeUpdateNowPlaying(arguments: arguments)
-        case "love_track":
+        case .loveTrack:
             return try await executeLoveTrack(arguments: arguments)
-        case "unlove_track":
+        case .unloveTrack:
             return try await executeUnloveTrack(arguments: arguments)
         default:
-            throw ToolError.lastFMError("Unknown scrobble tool: \(toolName)")
+            throw ToolError.lastFMError("Invalid scrobble tool: \(toolName.rawValue)")
         }
     }
     
@@ -277,7 +277,9 @@ struct ScrobbleTools {
         return ScrobbleTrackInput(
             artist: artist,
             track: track,
-            album: album
+            album: album,
+            timestamp: timestamp,
+            duration: duration
         )
     }
     

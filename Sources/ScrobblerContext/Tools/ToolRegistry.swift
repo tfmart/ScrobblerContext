@@ -87,71 +87,29 @@ struct ToolRegistry {
     func executeTool(name: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
         logger.info("Executing tool: \(name)")
         
-        // Determine which category the tool belongs to and execute
-        let category = determineToolCategory(name)
-        
-        switch category {
-        case .authentication:
-            return try await authTools.execute(toolName: name, arguments: arguments)
-        case .artist:
-            return try await artistTools.execute(toolName: name, arguments: arguments)
-        case .album:
-            return try await albumTools.execute(toolName: name, arguments: arguments)
-        case .track:
-            return try await trackTools.execute(toolName: name, arguments: arguments)
-        case .user:
-            return try await userTools.execute(toolName: name, arguments: arguments)
-        case .scrobble:
-            return try await scrobbleTools.execute(toolName: name, arguments: arguments)
-        case .unknown:
+        // Convert string to ToolName enum
+        guard let toolName = ToolName(rawValue: name) else {
             logger.error("Unknown tool requested: \(name)")
             throw ToolError.lastFMError("Unknown tool: \(name)")
         }
-    }
-    
-    // MARK: - Private Helpers
-    
-    private func determineToolCategory(_ toolName: String) -> ToolCategory {
-        // Authentication tools
-        if toolName.hasPrefix("authenticate_") ||
-           toolName.hasPrefix("set_session_") ||
-           toolName.hasPrefix("check_auth_") {
-            return .authentication
-        }
         
-        // Artist tools
-        if toolName.hasPrefix("search_artist") ||
-           toolName.hasPrefix("get_artist_") ||
-           toolName.hasPrefix("get_similar_artists") {
-            return .artist
+        // Execute based on tool category
+        switch toolName.category {
+        case .authentication:
+            return try await authTools.execute(toolName: toolName, arguments: arguments)
+        case .artist:
+            return try await artistTools.execute(toolName: toolName, arguments: arguments)
+        case .album:
+            return try await albumTools.execute(toolName: toolName, arguments: arguments)
+        case .track:
+            return try await trackTools.execute(toolName: toolName, arguments: arguments)
+        case .user:
+            return try await userTools.execute(toolName: toolName, arguments: arguments)
+        case .scrobble:
+            return try await scrobbleTools.execute(toolName: toolName, arguments: arguments)
+        case .unknown:
+            logger.error("Unknown tool category for: \(name)")
+            throw ToolError.lastFMError("Unknown tool category: \(name)")
         }
-        
-        // Album tools
-        if toolName.hasPrefix("search_album") ||
-           toolName.hasPrefix("get_album_") {
-            return .album
-        }
-        
-        // Track tools
-        if toolName.hasPrefix("search_track") ||
-           toolName.hasPrefix("get_track_") ||
-           toolName.hasPrefix("get_similar_tracks") {
-            return .track
-        }
-        
-        // User tools
-        if toolName.hasPrefix("get_user_") {
-            return .user
-        }
-        
-        // Scrobble tools
-        if toolName.hasPrefix("scrobble_") ||
-           toolName.hasPrefix("update_now_playing") ||
-           toolName.hasPrefix("love_track") ||
-           toolName.hasPrefix("unlove_track") {
-            return .scrobble
-        }
-        
-        return .unknown
     }
 }

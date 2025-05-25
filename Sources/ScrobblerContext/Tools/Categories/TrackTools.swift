@@ -31,8 +31,8 @@ struct TrackTools {
     
     private static func createSearchTrackTool() -> Tool {
         return Tool(
-            name: "search_track",
-            description: "Search for tracks on Last.fm by name, optionally filtered by artist",
+            name: ToolName.searchTrack.rawValue,
+            description: ToolName.searchTrack.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -59,8 +59,8 @@ struct TrackTools {
     
     private static func createGetTrackInfoTool() -> Tool {
         return Tool(
-            name: "get_track_info",
-            description: "Get detailed information about a specific track including stats, tags, and album info",
+            name: ToolName.getTrackInfo.rawValue,
+            description: ToolName.getTrackInfo.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -89,8 +89,8 @@ struct TrackTools {
     
     private static func createGetSimilarTracksTool() -> Tool {
         return Tool(
-            name: "get_similar_tracks",
-            description: "Get tracks similar to the specified track, ranked by similarity based on listening data",
+            name: ToolName.getSimilarTracks.rawValue,
+            description: ToolName.getSimilarTracks.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -122,18 +122,18 @@ struct TrackTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
-        logger.info("Executing track tool: \(toolName)")
+    func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        logger.info("Executing track tool: \(toolName.rawValue)")
         
         switch toolName {
-        case "search_track":
+        case .searchTrack:
             return try await executeSearchTrack(arguments: arguments)
-        case "get_track_info":
+        case .getTrackInfo:
             return try await executeGetTrackInfo(arguments: arguments)
-        case "get_similar_tracks":
+        case .getSimilarTracks:
             return try await executeGetSimilarTracks(arguments: arguments)
         default:
-            throw ToolError.lastFMError("Unknown track tool: \(toolName)")
+            throw ToolError.lastFMError("Invalid track tool: \(toolName.rawValue)")
         }
     }
     

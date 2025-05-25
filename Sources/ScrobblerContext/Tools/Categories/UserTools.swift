@@ -32,8 +32,8 @@ struct UserTools {
     
     private static func createGetUserRecentTracksTool() -> Tool {
         return Tool(
-            name: "get_user_recent_tracks",
-            description: "Get a user's recently played tracks from Last.fm",
+            name: ToolName.getUserRecentTracks.rawValue,
+            description: ToolName.getUserRecentTracks.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -62,8 +62,8 @@ struct UserTools {
     
     private static func createGetUserTopArtistsTool() -> Tool {
         return Tool(
-            name: "get_user_top_artists",
-            description: "Get a user's top artists based on their listening history",
+            name: ToolName.getUserTopArtists.rawValue,
+            description: ToolName.getUserTopArtists.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -105,8 +105,8 @@ struct UserTools {
     
     private static func createGetUserTopTracksTool() -> Tool {
         return Tool(
-            name: "get_user_top_tracks",
-            description: "Get a user's top tracks based on their listening history",
+            name: ToolName.getUserTopTracks.rawValue,
+            description: ToolName.getUserTopTracks.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -148,8 +148,8 @@ struct UserTools {
     
     private static func createGetUserInfoTool() -> Tool {
         return Tool(
-            name: "get_user_info",
-            description: "Get detailed information about a Last.fm user's profile",
+            name: ToolName.getUserInfo.rawValue,
+            description: ToolName.getUserInfo.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -165,20 +165,20 @@ struct UserTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
-        logger.info("Executing user tool: \(toolName)")
+    func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        logger.info("Executing user tool: \(toolName.rawValue)")
         
         switch toolName {
-        case "get_user_recent_tracks":
+        case .getUserRecentTracks:
             return try await executeGetUserRecentTracks(arguments: arguments)
-        case "get_user_top_artists":
+        case .getUserTopArtists:
             return try await executeGetUserTopArtists(arguments: arguments)
-        case "get_user_top_tracks":
+        case .getUserTopTracks:
             return try await executeGetUserTopTracks(arguments: arguments)
-        case "get_user_info":
+        case .getUserInfo:
             return try await executeGetUserInfo(arguments: arguments)
         default:
-            throw ToolError.lastFMError("Unknown user tool: \(toolName)")
+            throw ToolError.lastFMError("Invalid user tool: \(toolName.rawValue)")
         }
     }
     

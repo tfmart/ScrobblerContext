@@ -31,8 +31,8 @@ struct ArtistTools {
     
     private static func createSearchArtistTool() -> Tool {
         return Tool(
-            name: "search_artist",
-            description: "Search for artists on Last.fm by name",
+            name: ToolName.searchArtist.rawValue,
+            description: ToolName.searchArtist.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -55,8 +55,8 @@ struct ArtistTools {
     
     private static func createGetArtistInfoTool() -> Tool {
         return Tool(
-            name: "get_artist_info",
-            description: "Get detailed information about a specific artist including bio, stats, tags, and similar artists",
+            name: ToolName.getArtistInfo.rawValue,
+            description: ToolName.getArtistInfo.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -86,8 +86,8 @@ struct ArtistTools {
     
     private static func createGetSimilarArtistsTool() -> Tool {
         return Tool(
-            name: "get_similar_artists",
-            description: "Get artists similar to the specified artist, ranked by similarity",
+            name: ToolName.getSimilarArtists.rawValue,
+            description: ToolName.getSimilarArtists.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -115,18 +115,18 @@ struct ArtistTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
-        logger.info("Executing artist tool: \(toolName)")
+    func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        logger.info("Executing artist tool: \(toolName.rawValue)")
         
         switch toolName {
-        case "search_artist":
+        case .searchArtist:
             return try await executeSearchArtist(arguments: arguments)
-        case "get_artist_info":
+        case .getArtistInfo:
             return try await executeGetArtistInfo(arguments: arguments)
-        case "get_similar_artists":
+        case .getSimilarArtists:
             return try await executeGetSimilarArtists(arguments: arguments)
         default:
-            throw ToolError.lastFMError("Unknown artist tool: \(toolName)")
+            throw ToolError.lastFMError("Invalid artist tool: \(toolName.rawValue)")
         }
     }
     

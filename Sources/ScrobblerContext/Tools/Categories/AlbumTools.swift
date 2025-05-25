@@ -30,8 +30,8 @@ struct AlbumTools {
     
     private static func createSearchAlbumTool() -> Tool {
         return Tool(
-            name: "search_album",
-            description: "Search for albums on Last.fm by name",
+            name: ToolName.searchAlbum.rawValue,
+            description: ToolName.searchAlbum.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -54,8 +54,8 @@ struct AlbumTools {
     
     private static func createGetAlbumInfoTool() -> Tool {
         return Tool(
-            name: "get_album_info",
-            description: "Get detailed information about a specific album including tracklist, tags, and stats",
+            name: ToolName.getAlbumInfo.rawValue,
+            description: ToolName.getAlbumInfo.description,
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
@@ -89,16 +89,16 @@ struct AlbumTools {
     
     // MARK: - Tool Execution
     
-    func execute(toolName: String, arguments: [String: (any Sendable)]) async throws -> ToolResult {
-        logger.info("Executing album tool: \(toolName)")
+    func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        logger.info("Executing album tool: \(toolName.rawValue)")
         
         switch toolName {
-        case "search_album":
+        case .searchAlbum:
             return try await executeSearchAlbum(arguments: arguments)
-        case "get_album_info":
+        case .getAlbumInfo:
             return try await executeGetAlbumInfo(arguments: arguments)
         default:
-            throw ToolError.lastFMError("Unknown album tool: \(toolName)")
+            throw ToolError.lastFMError("Invalid album tool: \(toolName.rawValue)")
         }
     }
     
@@ -128,6 +128,8 @@ struct AlbumTools {
         let input = try parseGetAlbumInfoInput(arguments)
         
         do {
+            // For now, we'll use the basic getAlbumInfo method
+            // In the future, we can extend LastFMService to support additional parameters
             let album = try await lastFMService.getAlbumInfo(
                 album: input.album,
                 artist: input.artist
