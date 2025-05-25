@@ -157,7 +157,7 @@ struct ToolExecutor {
             try validateRequired(["track", "artist"], in: arguments)
             if tool == .getSimilarTracks {
                 // Note: limit is optional for getSimilarTracks and can be nil
-                if let limitValue = arguments["limit"] {
+                if arguments["limit"] != nil {
                     _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 1000)
                 }
             }
