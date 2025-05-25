@@ -13,6 +13,7 @@ enum ToolName: String, CaseIterable {
     case authenticateBrowser = "authenticate_browser"
     case setSessionKey = "set_session_key"
     case checkAuthStatus = "check_auth_status"
+    case restoreSession = "restore_session"
     case logout = "logout"
     
     // MARK: - Artist Tools
@@ -67,7 +68,7 @@ enum ToolName: String, CaseIterable {
     /// The category this tool belongs to
     var category: ToolCategory {
         switch self {
-        case .authenticateBrowser, .setSessionKey, .checkAuthStatus, .logout:
+        case .authenticateBrowser, .setSessionKey, .checkAuthStatus, .restoreSession, .logout:
             return .authentication
         case .searchArtist, .getArtistInfo, .getSimilarArtists, .addArtistTags, .getArtistCorrection, .getArtistTags, .getArtistTopAlbums, .getArtistTopTracks, .removeArtistTag:
             return .artist
@@ -87,7 +88,7 @@ enum ToolName: String, CaseIterable {
         switch self {
         case .scrobbleTrack, .scrobbleMultipleTracks, .updateNowPlaying, .loveTrack, .unloveTrack, .addArtistTags, .removeArtistTag, .addAlbumTags, .removeAlbumTag, .addTrackTags, .removeTrackTag:
             return true
-        case .authenticateBrowser, .setSessionKey, .logout, .checkAuthStatus:
+        case .authenticateBrowser, .setSessionKey, .logout, .checkAuthStatus, .restoreSession:
             return false // These tools manage authentication
         default:
             return false // Most read-only tools don't require auth
@@ -109,6 +110,8 @@ enum ToolName: String, CaseIterable {
             return "Set an existing Last.fm session key for authentication"
         case .checkAuthStatus:
             return "Check current authentication status with Last.fm"
+        case .restoreSession:
+            return "Restore authentication from saved session data"
         case .logout:
             return "Clear authentication session and logout from Last.fm"
         case .searchArtist:

@@ -22,11 +22,19 @@ final class LastFMService: Sendable {
     // Session management - using actor for thread safety
     private let sessionManager = SessionManager()
     
+    // Session persistence
+    private let persistenceManager = SessionPersistenceManager()
+    
     init(apiKey: String, secretKey: String) {
         self.apiKey = apiKey
         self.secretKey = secretKey
         self.manager = SBKManager(apiKey: apiKey, secret: secretKey)
         logger.info("LastFM service initialized")
+        
+        // Try to restore session on startup
+        Task {
+            await restoreSessionIfAvailable()
+        }
     }
     
     // MARK: - Public API Access
@@ -49,11 +57,16 @@ final class LastFMService: Sendable {
         do {
             let userInfo = try await manager.getInfo(forUser: nil) // nil gets current authenticated user
             await sessionManager.setUsername(userInfo.username)
-            logger.info("Session key set successfully for user: \(userInfo.username)")
+            
+            // Save session for persistence
+            try await persistenceManager.saveSession(sessionKey: sessionKey, username: userInfo.username)
+            
+            logger.info("Session key set and saved successfully for user: \(userInfo.username)")
         } catch {
             // Clear invalid session
             await sessionManager.clearSession()
             manager.signOut()
+            try? await persistenceManager.clearSession()
             logger.error("Invalid session key provided: \(error)")
             throw ToolError.authenticationFailed("Invalid session key: \(error.localizedDescription)")
         }
@@ -86,7 +99,52 @@ final class LastFMService: Sendable {
     func clearSession() async {
         await sessionManager.clearSession()
         manager.signOut()
-        logger.info("Session cleared")
+        
+        // Also clear persisted session
+        do {
+            try await persistenceManager.clearSession()
+            logger.info("Session cleared and removed from storage")
+        } catch {
+            logger.warning("Failed to clear persisted session: \(error)")
+        }
+    }
+    
+    /// Restore session from persistent storage if available
+    func restoreSessionIfAvailable() async {
+        do {
+            guard let savedSession = try await persistenceManager.loadSession() else {
+                logger.info("🔍 No saved session to restore")
+                return
+            }
+            
+            logger.info("🔄 Attempting to restore session for user: \(savedSession.username)")
+            
+            // Set the session in memory
+            await sessionManager.setSessionKey(savedSession.sessionKey)
+            await sessionManager.setUsername(savedSession.username)
+            
+            // Set in ScrobbleKit manager
+            manager.setSessionKey(savedSession.sessionKey)
+            
+            // Verify the session is still valid
+            do {
+                _ = try await manager.getInfo(forUser: nil)
+                logger.info("✅ Session successfully restored for user: \(savedSession.username)")
+            } catch {
+                logger.warning("⚠️ Saved session is no longer valid, clearing: \(error)")
+                await clearSession()
+            }
+            
+        } catch {
+            logger.error("❌ Failed to restore session: \(error)")
+            // Clear any potentially corrupted session data
+            try? await persistenceManager.clearSession()
+        }
+    }
+    
+    /// Check if there's a saved session available
+    func hasSavedSession() async -> Bool {
+        return await persistenceManager.hasSession()
     }
     
     // MARK: - OAuth Helper Methods

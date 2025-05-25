@@ -31,6 +31,7 @@ struct AuthTools {
             createBrowserAuthTool(),
             createSetSessionKeyTool(),
             createCheckAuthStatusTool(),
+            createRestoreSessionTool(),
             createLogoutTool()
         ]
     }
@@ -89,6 +90,18 @@ struct AuthTools {
         )
     }
     
+    private static func createRestoreSessionTool() -> Tool {
+        return Tool(
+            name: "restore_session",
+            description: "Restore authentication from saved session data",
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([:]),
+                "required": .array([])
+            ])
+        )
+    }
+    
     private static func createLogoutTool() -> Tool {
         return Tool(
             name: "logout",
@@ -113,6 +126,8 @@ struct AuthTools {
             return try await executeSetSessionKey(arguments: arguments)
         case .checkAuthStatus:
             return try await executeCheckAuthStatus(arguments: arguments)
+        case .restoreSession:
+            return try await executeRestoreSession(arguments: arguments)
         case .logout:
             return try await executeLogout(arguments: arguments)
         default:
@@ -232,9 +247,11 @@ struct AuthTools {
     
     private func executeCheckAuthStatus(arguments: [String: (any Sendable)]) async throws -> ToolResult {
         let isAuthenticated = await lastFMService.isAuthenticated()
+        let hasSavedSession = await lastFMService.hasSavedSession()
         
         var result: [String: (any Sendable)] = [
             "authenticated": isAuthenticated,
+            "has_saved_session": hasSavedSession,
             "timestamp": Date().timeIntervalSince1970
         ]
         
@@ -242,14 +259,58 @@ struct AuthTools {
             if let username = await lastFMService.getCurrentUsername() {
                 result["username"] = username
                 result["message"] = "Authenticated as \(username)"
+                
+                if hasSavedSession {
+                    result["session_source"] = "restored_from_storage"
+                } else {
+                    result["session_source"] = "current_session_only"
+                }
             } else {
                 result["message"] = "Authenticated but username unavailable"
             }
         } else {
-            result["message"] = "Not authenticated. Use 'authenticate_browser' to authenticate."
+            if hasSavedSession {
+                result["message"] = "Not authenticated, but saved session available. Try restarting or use 'authenticate_browser'."
+            } else {
+                result["message"] = "Not authenticated. Use 'authenticate_browser' to authenticate."
+            }
         }
         
         return ToolResult.success(data: result)
+    }
+    
+    private func executeRestoreSession(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        logger.info("🔄 Attempting to restore session from saved data...")
+        
+        await lastFMService.restoreSessionIfAvailable()
+        
+        let isAuthenticated = await lastFMService.isAuthenticated()
+        
+        if isAuthenticated {
+            let username = await lastFMService.getCurrentUsername()
+            logger.info("✅ Session restored successfully for user: \(username ?? "unknown")")
+            
+            let result: [String: (any Sendable)] = [
+                "restored": true,
+                "authenticated": true,
+                "username": username ?? "unknown",
+                "message": "Session successfully restored from saved data",
+                "timestamp": Date().timeIntervalSince1970
+            ]
+            
+            return ToolResult.success(data: result)
+        } else {
+            logger.info("❌ No valid saved session found")
+            
+            let result: [String: (any Sendable)] = [
+                "restored": false,
+                "authenticated": false,
+                "message": "No valid saved session found. Please authenticate using 'authenticate_browser'",
+                "timestamp": Date().timeIntervalSince1970
+            ]
+            
+            return ToolResult.success(data: result)
+        }
     }
     
     private func executeLogout(arguments: [String: (any Sendable)]) async throws -> ToolResult {

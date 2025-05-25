@@ -76,7 +76,7 @@ struct ToolExecutor {
         case .setSessionKey:
             try validateSetSessionKeyArguments(arguments)
             
-        case .checkAuthStatus, .logout:
+        case .checkAuthStatus, .logout, .restoreSession:
             // These tools don't require arguments
             break
             
