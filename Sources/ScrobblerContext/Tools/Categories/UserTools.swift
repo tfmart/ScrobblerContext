@@ -26,7 +26,12 @@ struct UserTools {
             createGetUserRecentTracksTool(),
             createGetUserTopArtistsTool(),
             createGetUserTopTracksTool(),
-            createGetUserInfoTool()
+            createGetUserInfoTool(),
+            createGetUserFriendsTool(),
+            createGetUserLovedTracksTool(),
+            createGetUserPersonalTagsForArtistsTool(),
+            createGetUserTopAlbumsTool(),
+            createGetUserTopTagsTool()
         ]
     }
     
@@ -176,6 +181,169 @@ struct UserTools {
         )
     }
     
+    private static func createGetUserFriendsTool() -> Tool {
+        return Tool(
+            name: ToolName.getUserFriends.rawValue,
+            description: ToolName.getUserFriends.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "username": .object([
+                        "type": .string("string"),
+                        "description": .string("Last.fm username to get friends for")
+                    ]),
+                    "recent_tracks": .object([
+                        "type": .string("boolean"),
+                        "description": .string("Include information about friends' recent tracks"),
+                        "default": .bool(false)
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of friends to return (1-50)"),
+                        "default": .int(50),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
+                    ]),
+                    "page": .object([
+                        "type": .string("integer"),
+                        "description": .string("Page number for pagination (starts from 1)"),
+                        "default": .int(1),
+                        "minimum": .int(1)
+                    ])
+                ]),
+                "required": .array([.string("username")])
+            ])
+        )
+    }
+    
+    private static func createGetUserLovedTracksTool() -> Tool {
+        return Tool(
+            name: ToolName.getUserLovedTracks.rawValue,
+            description: ToolName.getUserLovedTracks.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "username": .object([
+                        "type": .string("string"),
+                        "description": .string("Last.fm username to get loved tracks for")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of loved tracks to return (1-50)"),
+                        "default": .int(50),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
+                    ]),
+                    "page": .object([
+                        "type": .string("integer"),
+                        "description": .string("Page number for pagination (starts from 1)"),
+                        "default": .int(1),
+                        "minimum": .int(1)
+                    ])
+                ]),
+                "required": .array([.string("username")])
+            ])
+        )
+    }
+    
+    private static func createGetUserPersonalTagsForArtistsTool() -> Tool {
+        return Tool(
+            name: ToolName.getUserPersonalTagsForArtists.rawValue,
+            description: ToolName.getUserPersonalTagsForArtists.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "username": .object([
+                        "type": .string("string"),
+                        "description": .string("Last.fm username to get personal tags from")
+                    ]),
+                    "tag": .object([
+                        "type": .string("string"),
+                        "description": .string("The specific tag to search for")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of artists to return (1-50)"),
+                        "default": .int(50),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
+                    ]),
+                    "page": .object([
+                        "type": .string("integer"),
+                        "description": .string("Page number for pagination (starts from 1)"),
+                        "default": .int(1),
+                        "minimum": .int(1)
+                    ])
+                ]),
+                "required": .array([.string("username"), .string("tag")])
+            ])
+        )
+    }
+    
+    private static func createGetUserTopAlbumsTool() -> Tool {
+        return Tool(
+            name: ToolName.getUserTopAlbums.rawValue,
+            description: ToolName.getUserTopAlbums.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "username": .object([
+                        "type": .string("string"),
+                        "description": .string("Last.fm username to get top albums for")
+                    ]),
+                    "period": .object([
+                        "type": .string("string"),
+                        "description": .string("Time period for top albums"),
+                        "enum": .array([
+                            .string("overall"),
+                            .string("7day"),
+                            .string("1month"),
+                            .string("3month"),
+                            .string("6month"),
+                            .string("12month")
+                        ]),
+                        "default": .string("overall")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of top albums to return (1-50)"),
+                        "default": .int(50),
+                        "minimum": .int(1),
+                        "maximum": .int(50)
+                    ]),
+                    "page": .object([
+                        "type": .string("integer"),
+                        "description": .string("Page number for pagination (starts from 1)"),
+                        "default": .int(1),
+                        "minimum": .int(1)
+                    ])
+                ]),
+                "required": .array([.string("username")])
+            ])
+        )
+    }
+    
+    private static func createGetUserTopTagsTool() -> Tool {
+        return Tool(
+            name: ToolName.getUserTopTags.rawValue,
+            description: ToolName.getUserTopTags.description,
+            inputSchema: .object([
+                "type": .string("object"),
+                "properties": .object([
+                    "username": .object([
+                        "type": .string("string"),
+                        "description": .string("Last.fm username to get top tags for")
+                    ]),
+                    "limit": .object([
+                        "type": .string("integer"),
+                        "description": .string("Maximum number of top tags to return (optional, uses Last.fm default if not specified)")
+                    ])
+                ]),
+                "required": .array([.string("username")])
+            ])
+        )
+    }
+    
     // MARK: - Tool Execution
     
     func execute(toolName: ToolName, arguments: [String: (any Sendable)]) async throws -> ToolResult {
@@ -190,6 +358,16 @@ struct UserTools {
             return try await executeGetUserTopTracks(arguments: arguments)
         case .getUserInfo:
             return try await executeGetUserInfo(arguments: arguments)
+        case .getUserFriends:
+            return try await executeGetUserFriends(arguments: arguments)
+        case .getUserLovedTracks:
+            return try await executeGetUserLovedTracks(arguments: arguments)
+        case .getUserPersonalTagsForArtists:
+            return try await executeGetUserPersonalTagsForArtists(arguments: arguments)
+        case .getUserTopAlbums:
+            return try await executeGetUserTopAlbums(arguments: arguments)
+        case .getUserTopTags:
+            return try await executeGetUserTopTags(arguments: arguments)
         default:
             throw ToolError.lastFMError("Invalid user tool: \(toolName.rawValue)")
         }
@@ -279,6 +457,113 @@ struct UserTools {
         } catch {
             logger.error("Failed to get user info for '\(input.username)': \(error)")
             return ToolResult.failure(error: "Failed to get user info: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeGetUserFriends(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseGetUserFriendsInput(arguments)
+        
+        do {
+            let friends = try await lastFMService.getUserFriends(
+                user: input.username,
+                recentTracks: input.recentTracks,
+                limit: input.limit,
+                page: input.page
+            )
+            
+            logger.info("Retrieved \(friends.count) friends for user: \(input.username)")
+            
+            let result = ResponseFormatters.format(friends)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to get friends for user '\(input.username)': \(error)")
+            return ToolResult.failure(error: "Failed to get user friends: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeGetUserLovedTracks(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseGetUserLovedTracksInput(arguments)
+        
+        do {
+            let lovedTracks = try await lastFMService.getUserLovedTracks(
+                user: input.username,
+                limit: input.limit,
+                page: input.page
+            )
+            
+            logger.info("Retrieved \(lovedTracks.tracks.count) loved tracks for user: \(input.username)")
+            
+            let result = ResponseFormatters.format(lovedTracks)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to get loved tracks for user '\(input.username)': \(error)")
+            return ToolResult.failure(error: "Failed to get loved tracks: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeGetUserPersonalTagsForArtists(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseGetUserPersonalTagsForArtistsInput(arguments)
+        
+        do {
+            let taggedArtists = try await lastFMService.getUserPersonalTagsForArtists(
+                user: input.username,
+                tag: input.tag,
+                limit: input.limit,
+                page: input.page
+            )
+            
+            logger.info("Retrieved \(taggedArtists.results.count) artists tagged with '\(input.tag)' by user: \(input.username)")
+            
+            let result = ResponseFormatters.format(taggedArtists)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to get personal tagged artists for user '\(input.username)': \(error)")
+            return ToolResult.failure(error: "Failed to get personal tagged artists: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeGetUserTopAlbums(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseGetUserTopAlbumsInput(arguments)
+        
+        do {
+            let topAlbums = try await lastFMService.getUserTopAlbums(
+                user: input.username,
+                period: input.period,
+                limit: input.limit,
+                page: input.page
+            )
+            
+            logger.info("Retrieved \(topAlbums.results.count) top albums for user: \(input.username) (period: \(input.period))")
+            
+            let result = ResponseFormatters.format(topAlbums)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to get top albums for user '\(input.username)': \(error)")
+            return ToolResult.failure(error: "Failed to get top albums: \(error.localizedDescription)")
+        }
+    }
+    
+    private func executeGetUserTopTags(arguments: [String: (any Sendable)]) async throws -> ToolResult {
+        let input = try parseGetUserTopTagsInput(arguments)
+        
+        do {
+            let topTags = try await lastFMService.getUserTopTags(
+                user: input.username,
+                limit: input.limit
+            )
+            
+            logger.info("Retrieved \(topTags.results.count) top tags for user: \(input.username)")
+            
+            let result = ResponseFormatters.format(topTags)
+            return ToolResult.success(data: result)
+            
+        } catch {
+            logger.error("Failed to get top tags for user '\(input.username)': \(error)")
+            return ToolResult.failure(error: "Failed to get top tags: \(error.localizedDescription)")
         }
     }
     
@@ -374,5 +659,94 @@ struct UserTools {
         let username = "\(usernameValue)"
         
         return GetUserInfoInput(username: username)
+    }
+    
+    private func parseGetUserFriendsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserFriendsInput {
+        guard let usernameValue = arguments["username"] else {
+            throw ToolError.missingParameter("username")
+        }
+        
+        let username = "\(usernameValue)"
+        let recentTracks = arguments.getBool(for: "recent_tracks") ?? false
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 50) ?? 50
+        let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
+        
+        return GetUserFriendsInput(
+            username: username,
+            recentTracks: recentTracks,
+            limit: limit,
+            page: page
+        )
+    }
+    
+    private func parseGetUserLovedTracksInput(_ arguments: [String: (any Sendable)]) throws -> GetUserLovedTracksInput {
+        guard let usernameValue = arguments["username"] else {
+            throw ToolError.missingParameter("username")
+        }
+        
+        let username = "\(usernameValue)"
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 50) ?? 50
+        let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
+        
+        return GetUserLovedTracksInput(
+            username: username,
+            limit: limit,
+            page: page
+        )
+    }
+    
+    private func parseGetUserPersonalTagsForArtistsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserPersonalTagsForArtistsInput {
+        guard let usernameValue = arguments["username"] else {
+            throw ToolError.missingParameter("username")
+        }
+        
+        guard let tagValue = arguments["tag"] else {
+            throw ToolError.missingParameter("tag")
+        }
+        
+        let username = "\(usernameValue)"
+        let tag = "\(tagValue)"
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 50) ?? 50
+        let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
+        
+        return GetUserPersonalTagsForArtistsInput(
+            username: username,
+            tag: tag,
+            limit: limit,
+            page: page
+        )
+    }
+    
+    private func parseGetUserTopAlbumsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserTopAlbumsInput {
+        guard let usernameValue = arguments["username"] else {
+            throw ToolError.missingParameter("username")
+        }
+        
+        let username = "\(usernameValue)"
+        let periodInput = arguments.getString(for: "period") ?? "overall"
+        let period = try validatePeriod(periodInput)
+        let limit = try arguments.getValidatedInt(for: "limit", min: 1, max: 50, default: 50) ?? 50
+        let page = try arguments.getValidatedInt(for: "page", min: 1, max: Int.max, default: 1) ?? 1
+        
+        return GetUserTopAlbumsInput(
+            username: username,
+            period: period,
+            limit: limit,
+            page: page
+        )
+    }
+    
+    private func parseGetUserTopTagsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserTopTagsInput {
+        guard let usernameValue = arguments["username"] else {
+            throw ToolError.missingParameter("username")
+        }
+        
+        let username = "\(usernameValue)"
+        let limit = arguments.getInt(for: "limit") // Optional, can be nil
+        
+        return GetUserTopTagsInput(
+            username: username,
+            limit: limit
+        )
     }
 }

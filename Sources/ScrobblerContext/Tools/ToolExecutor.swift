@@ -177,6 +177,30 @@ struct ToolExecutor {
         case .getUserInfo:
             try validateRequired(["username"], in: arguments)
             
+        case .getUserFriends:
+            try validateRequired(["username"], in: arguments)
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
+            try validateOptionalPage(in: arguments)
+            
+        case .getUserLovedTracks:
+            try validateRequired(["username"], in: arguments)
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
+            try validateOptionalPage(in: arguments)
+            
+        case .getUserPersonalTagsForArtists:
+            try validateRequired(["username", "tag"], in: arguments)
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
+            try validateOptionalPage(in: arguments)
+            
+        case .getUserTopAlbums:
+            try validateRequired(["username"], in: arguments)
+            _ = try arguments.getValidatedInt(for: "limit", min: 1, max: 50)
+            try validateOptionalPage(in: arguments)
+            
+        case .getUserTopTags:
+            try validateRequired(["username"], in: arguments)
+            // Note: limit is optional for getUserTopTags and can be nil
+            
         // Scrobble tools
         case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack:
             try validateRequired(["artist", "track"], in: arguments)

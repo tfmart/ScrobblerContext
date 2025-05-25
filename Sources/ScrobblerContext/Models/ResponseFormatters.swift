@@ -274,6 +274,63 @@ struct ResponseFormatters {
         ]
     }
     
+    static func format(_ users: [SBKUser]) -> [String: Any] {
+        let formattedUsers = users.map(formatUserInfo)
+        return ["friends": formattedUsers]
+    }
+    
+    static func format(_ lovedTracks: SBKLovedTracks) -> [String: Any] {
+        let formattedTracks = lovedTracks.tracks.map { lovedTrack -> [String: Any] in
+            var trackDict = format(lovedTrack.track)
+            
+            if let date = lovedTrack.date {
+                trackDict["loved_at"] = date.timeIntervalSince1970
+                trackDict["loved_date"] = ISO8601DateFormatter().string(from: date)
+            }
+            
+            return trackDict
+        }
+        
+        return [
+            "loved_tracks": formattedTracks,
+            "metadata": [
+                "page": lovedTracks.searchAttributes.page,
+                "per_page": lovedTracks.searchAttributes.perPage,
+                "total_pages": lovedTracks.searchAttributes.totalPages,
+                "total": lovedTracks.searchAttributes.total
+            ]
+        ]
+    }
+    
+    static func format(_ topAlbums: SBKSearchResult<SBKAlbum>) -> [String: Any] {
+        let formattedAlbums = topAlbums.results.map(format)
+        
+        return [
+            "top_albums": formattedAlbums,
+            "metadata": formatSearchMetadata(topAlbums)
+        ]
+    }
+    
+    static func format(_ topTags: SBKSearchResult<SBKTag>) -> [String: Any] {
+        let formattedTags = topTags.results.map { tag -> [String: Any] in
+            var tagDict: [String: Any] = [
+                "name": tag.name,
+                "url": tag.url?.absoluteString ?? ""
+            ]
+            
+            if let count = tag.count {
+                tagDict["count"] = count
+            }
+            
+            return tagDict
+        }
+        
+        return [
+            "top_tags": formattedTags,
+            "metadata": formatSearchMetadata(topTags)
+        ]
+    }
+    
     // MARK: - Helper Methods
     
     private static func formatSearchMetadata<T>(_ searchResult: SBKSearchResult<T>) -> [String: Any] {

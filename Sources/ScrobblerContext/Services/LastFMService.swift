@@ -258,6 +258,35 @@ final class LastFMService: Sendable {
         return try await manager.getInfo(forUser: username)
     }
     
+    func getUserFriends(user: String, recentTracks: Bool = false, limit: Int = 50, page: Int = 1) async throws -> [SBKUser] {
+        logger.info("Getting friends for user: \(user) (recentTracks: \(recentTracks), limit: \(limit), page: \(page))")
+        return try await manager.getFriends(for: user, recentTracks: recentTracks, limit: limit, page: page)
+    }
+    
+    func getUserLovedTracks(user: String, limit: Int = 50, page: Int = 1) async throws -> SBKLovedTracks {
+        logger.info("Getting loved tracks for user: \(user) (limit: \(limit), page: \(page))")
+        return try await manager.getLovedTracks(fromUser: user, limit: limit, page: page)
+    }
+    
+    func getUserPersonalTagsForArtists(user: String, tag: String, limit: Int = 50, page: Int = 1) async throws -> SBKSearchResult<SBKArtist> {
+        logger.info("Getting personal tags for artists from user: \(user), tag: \(tag) (limit: \(limit), page: \(page))")
+        return try await manager.getPersonalTagsForArtists(fromUser: user, tag: tag, limit: limit, page: page)
+    }
+    
+    func getUserTopAlbums(user: String, period: String = "overall", limit: Int = 50, page: Int = 1) async throws -> SBKSearchResult<SBKAlbum> {
+        logger.info("Getting top albums for user: \(user) (period: \(period), limit: \(limit), page: \(page))")
+        
+        // Convert string period to SBKSearchPeriod
+        let searchPeriod = convertStringToPeriod(period)
+        
+        return try await manager.getTopAlbums(forUser: user, period: searchPeriod, limit: limit, page: page)
+    }
+    
+    func getUserTopTags(user: String, limit: Int? = nil) async throws -> SBKSearchResult<SBKTag> {
+        logger.info("Getting top tags for user: \(user) (limit: \(limit?.description ?? "default"))")
+        return try await manager.getTopTags(forUser: user, limit: limit)
+    }
+    
     // MARK: - Love/Unlove Services
     
     func loveTrack(track: String, artist: String) async throws {

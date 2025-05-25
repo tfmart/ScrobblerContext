@@ -43,6 +43,11 @@ enum ToolName: String, CaseIterable {
     case getUserTopArtists = "get_user_top_artists"
     case getUserTopTracks = "get_user_top_tracks"
     case getUserInfo = "get_user_info"
+    case getUserFriends = "get_user_friends"
+    case getUserLovedTracks = "get_user_loved_tracks"
+    case getUserPersonalTagsForArtists = "get_user_personal_tags_for_artists"
+    case getUserTopAlbums = "get_user_top_albums"
+    case getUserTopTags = "get_user_top_tags"
     
     // MARK: - Scrobble Tools
     case scrobbleTrack = "scrobble_track"
@@ -63,7 +68,7 @@ enum ToolName: String, CaseIterable {
             return .album
         case .searchTrack, .getTrackInfo, .getSimilarTracks:
             return .track
-        case .getUserRecentTracks, .getUserTopArtists, .getUserTopTracks, .getUserInfo:
+        case .getUserRecentTracks, .getUserTopArtists, .getUserTopTracks, .getUserInfo, .getUserFriends, .getUserLovedTracks, .getUserPersonalTagsForArtists, .getUserTopAlbums, .getUserTopTags:
             return .user
         case .scrobbleTrack, .updateNowPlaying, .loveTrack, .unloveTrack:
             return .scrobble
@@ -135,6 +140,16 @@ enum ToolName: String, CaseIterable {
             return "Get a user's top tracks based on their listening history"
         case .getUserInfo:
             return "Get detailed information about a Last.fm user's profile"
+        case .getUserFriends:
+            return "Get a user's friends list from Last.fm"
+        case .getUserLovedTracks:
+            return "Get a user's loved tracks from Last.fm"
+        case .getUserPersonalTagsForArtists:
+            return "Get artists tagged with a specific personal tag by a user"
+        case .getUserTopAlbums:
+            return "Get a user's top albums based on their listening history"
+        case .getUserTopTags:
+            return "Get a user's top tags ordered by usage"
         case .scrobbleTrack:
             return "Scrobble a track to the authenticated user's Last.fm profile"
         case .updateNowPlaying:

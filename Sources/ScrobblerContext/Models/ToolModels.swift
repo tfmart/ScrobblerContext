@@ -283,6 +283,69 @@ struct GetUserInfoInput: ToolInput {
     static let optionalParameters: [String: (any Sendable)?] = [:]
 }
 
+struct GetUserFriendsInput: ToolInput {
+    let username: String
+    let recentTracks: Bool
+    let limit: Int
+    let page: Int
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "recent_tracks": false,
+        "limit": 50,
+        "page": 1
+    ]
+}
+
+struct GetUserLovedTracksInput: ToolInput {
+    let username: String
+    let limit: Int
+    let page: Int
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "limit": 50,
+        "page": 1
+    ]
+}
+
+struct GetUserPersonalTagsForArtistsInput: ToolInput {
+    let username: String
+    let tag: String
+    let limit: Int
+    let page: Int
+    
+    static let requiredParameters = ["username", "tag"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "limit": 50,
+        "page": 1
+    ]
+}
+
+struct GetUserTopAlbumsInput: ToolInput {
+    let username: String
+    let period: String
+    let limit: Int
+    let page: Int
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "period": "overall",
+        "limit": 50,
+        "page": 1
+    ]
+}
+
+struct GetUserTopTagsInput: ToolInput {
+    let username: String
+    let limit: Int?
+    
+    static let requiredParameters = ["username"]
+    static let optionalParameters: [String: (any Sendable)?] = [
+        "limit": nil
+    ]
+}
+
 // MARK: - Scrobble Tools
 struct ScrobbleTrackInput: ToolInput {
     let artist: String
