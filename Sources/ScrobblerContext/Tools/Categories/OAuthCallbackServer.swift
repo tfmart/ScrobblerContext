@@ -189,7 +189,7 @@ final class OAuthCallbackServer: Sendable {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>Last.fm Authentication Success</title>
+            <title>✅ Authentication Successful!</title>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
@@ -199,9 +199,9 @@ final class OAuthCallbackServer: Sendable {
                     box-sizing: border-box;
                 }
                 
-                body { 
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif; 
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+                    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
                     color: white;
                     min-height: 100vh;
                     display: flex;
@@ -233,29 +233,29 @@ final class OAuthCallbackServer: Sendable {
                     60% { transform: translateY(-5px); }
                 }
                 
-                h1 { 
-                    color: #fff; 
+                h1 {
+                    color: #fff;
                     margin-bottom: 1rem;
                     font-size: 2rem;
                     font-weight: 600;
                 }
                 
                 .success-message {
-                    color: #4ade80;
+                    color: #f87171;
                     font-weight: 600;
                     font-size: 1.2rem;
                     margin-bottom: 1rem;
                 }
                 
-                p { 
-                    font-size: 1.1rem; 
+                p {
+                    font-size: 1.1rem;
                     margin: 1rem 0;
                     line-height: 1.5;
                     opacity: 0.9;
                 }
                 
                 .close-button {
-                    background: linear-gradient(45deg, #4ade80, #22c55e);
+                    background: linear-gradient(45deg, #f87171, #ef4444);
                     border: none;
                     color: white;
                     padding: 12px 24px;
@@ -265,59 +265,184 @@ final class OAuthCallbackServer: Sendable {
                     cursor: pointer;
                     margin-top: 1.5rem;
                     transition: all 0.2s ease;
-                    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+                    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
                 }
                 
                 .close-button:hover {
                     transform: translateY(-2px);
-                    box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
+                    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
                 }
                 
-                .footer {
-                    margin-top: 2rem;
+                .branding {
+                    color: #fca5a5;
                     font-size: 0.9rem;
-                    opacity: 0.7;
+                    font-weight: 500;
+                    margin-bottom: 1rem;
+                    opacity: 0.8;
                 }
                 
-                .pulse {
-                    animation: pulse 2s infinite;
+                .app-container {
+                    background: rgba(255, 255, 255, 0.12);
+                    padding: 2.5rem;
+                    border-radius: 20px;
+                    backdrop-filter: blur(15px);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    margin-top: 2rem;
+                    text-align: center;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+                    max-width: 600px;
+                    margin-left: auto;
+                    margin-right: auto;
                 }
                 
-                @keyframes pulse {
-                    0% { opacity: 1; }
-                    50% { opacity: 0.5; }
-                    100% { opacity: 1; }
+                .app-header {
+                    margin-bottom: 2rem;
+                }
+                
+                .app-section-title {
+                    color: #fecaca;
+                    font-size: 1.8rem;
+                    font-weight: 700;
+                    margin-bottom: 1rem;
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                }
+                
+                .app-section-description {
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 1.1rem;
+                    line-height: 1.6;
+                    margin-bottom: 2rem;
+                }
+                
+                .app-showcase {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 2rem;
+                    margin-bottom: 2rem;
+                    flex-wrap: wrap;
+                }
+                
+                .app-icon-section {
+                    flex-shrink: 0;
+                }
+                
+                .app-content {
+                    flex: 1;
+                    text-align: left;
+                    min-width: 300px;
+                }
+                
+                .app-device-preview {
+                    flex-shrink: 0;
+                }
+                
+                .app-icon {
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 20px;
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+                }
+                
+                .app-title {
+                    color: #fecaca;
+                    font-size: 1.6rem;
+                    font-weight: 700;
+                    margin-bottom: 0.75rem;
+                    line-height: 1.3;
+                }
+                
+                .app-description {
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 1.1rem;
+                    margin-bottom: 1.5rem;
+                    line-height: 1.6;
+                }
+                
+                .device-mockup {
+                    width: 180px;
+                    height: 360px;
+                    background: linear-gradient(145deg, #374151, #1f2937);
+                    border-radius: 25px;
+                    padding: 8px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+                    position: relative;
+                }
+                
+                .device-screen {
+                    width: 100%;
+                    height: 100%;
+                    background: #000;
+                    border-radius: 20px;
+                    overflow: hidden;
+                }
+                
+                .app-preview-image {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    border-radius: 20px;
+                }
+                
+                .app-link {
+                    color: white;
+                    background: linear-gradient(45deg, #f87171, #ef4444);
+                    font-size: 1rem;
+                    text-decoration: none;
+                    padding: 1rem 2rem;
+                    border-radius: 12px;
+                    transition: all 0.3s ease;
+                    display: inline-block;
+                    font-weight: 700;
+                    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+                }
+                
+                .app-link:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5);
+                }
+                
+                @media (max-width: 768px) {
+                    .app-showcase {
+                        flex-direction: column;
+                        text-align: center;
+                    }
+                    
+                    .app-content {
+                        text-align: center;
+                        min-width: auto;
+                    }
+                    
+                    .device-mockup {
+                        width: 150px;
+                        height: 300px;
+                    }
+                }
+                
+                .close-instruction {
+                    color: rgba(255, 255, 255, 0.8);
+                    font-size: 1rem;
+                    margin-top: 1.5rem;
                 }
             </style>
         </head>
         <body>
             <div class="container">
+                <div class="branding">ScrobblerContext</div>
                 <div class="icon">🎵</div>
                 <h1>Last.fm Authentication</h1>
-                <div class="success-message">✅ Authentication Successful!</div>
                 <p>You have successfully authenticated with Last.fm.</p>
-                <p>You can now close this window and return to your application.</p>
-                <button class="close-button" onclick="window.close()">Close Window</button>
-                <div class="footer">
-                    <p class="pulse">This window will automatically close in <span id="countdown">10</span> seconds</p>
+                <p class="close-instruction">You can now close this tab and return to your MCP client.</p>
+                
+                <div style="margin-top: 2rem;">
+                    <a href="https://apps.apple.com/us/app/airscrobble/id1618366994" class="app-link" target="_blank">
+                        📱 Try AirScrobble - The Scrobbler for what's playing IRL
+                    </a>
                 </div>
             </div>
             
             <script>
-                let countdown = 10;
-                const countdownElement = document.getElementById('countdown');
-                
-                const timer = setInterval(() => {
-                    countdown--;
-                    countdownElement.textContent = countdown;
-                    
-                    if (countdown <= 0) {
-                        clearInterval(timer);
-                        window.close();
-                    }
-                }, 1000);
-                
-                // Also allow manual close
+                // Allow manual close with keyboard shortcuts
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' || e.key === 'Enter') {
                         window.close();
