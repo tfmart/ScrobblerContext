@@ -9,6 +9,9 @@ import Foundation
 import MCP
 @preconcurrency import ScrobbleKit
 import Logging
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Core service wrapper for ScrobbleKit with enhanced authentication
 final class LastFMService: Sendable {
@@ -51,7 +54,7 @@ final class LastFMService: Sendable {
         await sessionManager.setSessionKey(sessionKey)
         
         // Set the session key in ScrobbleKit manager
-        manager.setSessionKey(sessionKey)
+        await manager.setSessionKey(sessionKey)
         
         // Verify the session works by getting user info
         do {
@@ -65,7 +68,7 @@ final class LastFMService: Sendable {
         } catch {
             // Clear invalid session
             await sessionManager.clearSession()
-            manager.signOut()
+            await manager.signOut()
             try? await persistenceManager.clearSession()
             logger.error("Invalid session key provided: \(error)")
             throw ToolError.authenticationFailed("Invalid session key: \(error.localizedDescription)")
@@ -98,7 +101,7 @@ final class LastFMService: Sendable {
     /// Clear current session
     func clearSession() async {
         await sessionManager.clearSession()
-        manager.signOut()
+        await manager.signOut()
         
         // Also clear persisted session
         do {
@@ -124,7 +127,7 @@ final class LastFMService: Sendable {
             await sessionManager.setUsername(savedSession.username)
             
             // Set in ScrobbleKit manager
-            manager.setSessionKey(savedSession.sessionKey)
+            await manager.setSessionKey(savedSession.sessionKey)
             
             // Verify the session is still valid
             do {
