@@ -449,7 +449,7 @@ struct ResponseFormatters {
         var result: [String: (any Sendable)] = ["authenticated": success]
         
         if let username = username {
-            result["username"] = username
+            result["user"] = username
         }
         
         result["timestamp"] = Date().timeIntervalSince1970
@@ -461,7 +461,7 @@ struct ResponseFormatters {
     
     static func formatUserInfo(_ user: SBKUser) -> [String: (any Sendable)] {
         var result: [String: (any Sendable)] = [
-            "username": user.username,
+            "user": user.username,
             "url": user.url,
             "playcount": user.playcount,
             "is_pro": user.isPro,

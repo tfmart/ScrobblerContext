@@ -13,7 +13,7 @@ struct GetUserTopTracksInput: ToolInput {
     let limit: Int
     let page: Int
     
-    static let requiredParameters = ["username"]
+    static let requiredParameters = ["user"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "period": "overall",
         "limit": 10,

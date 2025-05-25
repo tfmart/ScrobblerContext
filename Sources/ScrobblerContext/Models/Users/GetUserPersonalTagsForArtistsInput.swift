@@ -13,7 +13,7 @@ struct GetUserPersonalTagsForArtistsInput: ToolInput {
     let limit: Int
     let page: Int
     
-    static let requiredParameters = ["username", "tag"]
+    static let requiredParameters = ["user", "tag"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "limit": 50,
         "page": 1

@@ -75,7 +75,7 @@ struct ArtistTools {
                         "description": .string("Automatically correct misspelled artist names"),
                         "default": .bool(true)
                     ]),
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username for personalized data (optional)")
                     ]),
@@ -248,7 +248,7 @@ struct ArtistTools {
         
         let name = "\(nameValue)"
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
-        let username = arguments.getString(for: "username")
+        let username = arguments.getString(for: "user")
         let languageInput = arguments.getString(for: "language") ?? "en"
         let language = try validateLanguageCode(languageInput)
         

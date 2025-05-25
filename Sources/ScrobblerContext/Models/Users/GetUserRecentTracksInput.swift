@@ -15,7 +15,7 @@ struct GetUserRecentTracksInput: ToolInput {
     let extended: Bool
     let endDate: Date?
     
-    static let requiredParameters = ["username"]
+    static let requiredParameters = ["user"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "limit": 50,
         "page": 1,

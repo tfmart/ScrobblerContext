@@ -78,7 +78,7 @@ struct TrackTools {
                         "type": .string("string"),
                         "description": .string("Name of the artist who performed the track")
                     ]),
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username for personalized data (e.g., user's playcount, loved status)")
                     ]),
@@ -271,7 +271,7 @@ struct TrackTools {
         
         let track = "\(trackValue)"
         let artist = "\(artistValue)"
-        let username = arguments.getString(for: "username")
+        let username = arguments.getString(for: "user")
         let autocorrect = arguments.getBool(for: "autocorrect") ?? false
         let languageInput = arguments.getString(for: "language") ?? "en"
         let language = try validateLanguageCode(languageInput)

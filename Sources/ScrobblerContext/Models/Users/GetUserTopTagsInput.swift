@@ -11,7 +11,7 @@ struct GetUserTopTagsInput: ToolInput {
     let username: String
     let limit: Int?
     
-    static let requiredParameters = ["username"]
+    static let requiredParameters = ["user"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "limit": nil
     ]

@@ -17,7 +17,7 @@ struct GetAlbumInfoInput: ToolInput {
     static let requiredParameters = ["album", "artist"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "autocorrect": true,
-        "username": "",
+        "user": "",
         "language": "en"
     ]
 }

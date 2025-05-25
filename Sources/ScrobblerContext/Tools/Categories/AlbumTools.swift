@@ -82,7 +82,7 @@ struct AlbumTools {
                         "description": .string("Automatically correct misspelled album/artist names"),
                         "default": .bool(true)
                     ]),
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username for personalized data (e.g., user's playcount)")
                     ]),
@@ -153,7 +153,7 @@ struct AlbumTools {
                         "description": .string("Automatically correct misspelled album/artist names"),
                         "default": .bool(true)
                     ]),
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Username to get tags from (optional, if not provided returns all user tags)")
                     ])
@@ -428,7 +428,7 @@ struct AlbumTools {
         let album = "\(albumValue)"
         let artist = "\(artistValue)"
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
-        let username = arguments.getString(for: "username")
+        let username = arguments.getString(for: "user")
         let languageInput = arguments.getString(for: "language") ?? "en"
         let language = try validateLanguageCode(languageInput)
         
@@ -488,7 +488,7 @@ struct AlbumTools {
         let album = "\(albumValue)"
         let artist = "\(artistValue)"
         let autocorrect = arguments.getBool(for: "autocorrect") ?? true
-        let username = arguments.getString(for: "username")
+        let username = arguments.getString(for: "user")
         
         return GetAlbumTagsInput(
             album: album,

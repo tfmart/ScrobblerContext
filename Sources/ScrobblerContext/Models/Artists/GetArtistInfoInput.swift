@@ -16,7 +16,7 @@ struct GetArtistInfoInput: ToolInput {
     static let requiredParameters = ["name"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "autocorrect": true,
-        "username": "",
+        "user": "",
         "language": "en"
     ]
 }

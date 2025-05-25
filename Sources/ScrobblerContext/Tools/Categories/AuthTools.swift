@@ -257,7 +257,7 @@ struct AuthTools {
         
         if isAuthenticated {
             if let username = await lastFMService.getCurrentUsername() {
-                result["username"] = username
+                result["user"] = username
                 result["message"] = "Authenticated as \(username)"
                 
                 if hasSavedSession {
@@ -293,7 +293,7 @@ struct AuthTools {
             let result: [String: (any Sendable)] = [
                 "restored": true,
                 "authenticated": true,
-                "username": username ?? "unknown",
+                "user": username ?? "unknown",
                 "message": "Session successfully restored from saved data",
                 "timestamp": Date().timeIntervalSince1970
             ]

@@ -42,7 +42,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get recent tracks for")
                     ]),
@@ -73,7 +73,7 @@ struct UserTools {
                         "default": .bool(false)
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -85,7 +85,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get top artists for")
                     ]),
@@ -116,7 +116,7 @@ struct UserTools {
                         "minimum": .int(1)
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -128,7 +128,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get top tracks for")
                     ]),
@@ -159,7 +159,7 @@ struct UserTools {
                         "minimum": .int(1)
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -171,12 +171,12 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get profile information for")
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -188,7 +188,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get friends for")
                     ]),
@@ -211,7 +211,7 @@ struct UserTools {
                         "minimum": .int(1)
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -223,7 +223,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get loved tracks for")
                     ]),
@@ -241,7 +241,7 @@ struct UserTools {
                         "minimum": .int(1)
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -253,7 +253,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get personal tags from")
                     ]),
@@ -275,7 +275,7 @@ struct UserTools {
                         "minimum": .int(1)
                     ])
                 ]),
-                "required": .array([.string("username"), .string("tag")])
+                "required": .array([.string("user"), .string("tag")])
             ])
         )
     }
@@ -287,7 +287,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get top albums for")
                     ]),
@@ -318,7 +318,7 @@ struct UserTools {
                         "minimum": .int(1)
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -330,7 +330,7 @@ struct UserTools {
             inputSchema: .object([
                 "type": .string("object"),
                 "properties": .object([
-                    "username": .object([
+                    "user": .object([
                         "type": .string("string"),
                         "description": .string("Last.fm username to get top tags for")
                     ]),
@@ -339,7 +339,7 @@ struct UserTools {
                         "description": .string("Maximum number of top tags to return (optional, uses Last.fm default if not specified)")
                     ])
                 ]),
-                "required": .array([.string("username")])
+                "required": .array([.string("user")])
             ])
         )
     }
@@ -578,8 +578,8 @@ struct UserTools {
     }
     
     private func parseGetUserRecentTracksInput(_ arguments: [String: (any Sendable)]) throws -> GetUserRecentTracksInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"
@@ -614,8 +614,8 @@ struct UserTools {
     }
     
     private func parseGetUserTopArtistsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserTopArtistsInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"
@@ -633,8 +633,8 @@ struct UserTools {
     }
     
     private func parseGetUserTopTracksInput(_ arguments: [String: (any Sendable)]) throws -> GetUserTopTracksInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"
@@ -652,8 +652,8 @@ struct UserTools {
     }
     
     private func parseGetUserInfoInput(_ arguments: [String: (any Sendable)]) throws -> GetUserInfoInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"
@@ -662,8 +662,8 @@ struct UserTools {
     }
     
     private func parseGetUserFriendsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserFriendsInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"
@@ -680,8 +680,8 @@ struct UserTools {
     }
     
     private func parseGetUserLovedTracksInput(_ arguments: [String: (any Sendable)]) throws -> GetUserLovedTracksInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"
@@ -696,8 +696,8 @@ struct UserTools {
     }
     
     private func parseGetUserPersonalTagsForArtistsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserPersonalTagsForArtistsInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         guard let tagValue = arguments["tag"] else {
@@ -718,8 +718,8 @@ struct UserTools {
     }
     
     private func parseGetUserTopAlbumsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserTopAlbumsInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"
@@ -737,8 +737,8 @@ struct UserTools {
     }
     
     private func parseGetUserTopTagsInput(_ arguments: [String: (any Sendable)]) throws -> GetUserTopTagsInput {
-        guard let usernameValue = arguments["username"] else {
-            throw ToolError.missingParameter("username")
+        guard let usernameValue = arguments["user"] else {
+            throw ToolError.missingParameter("user")
         }
         
         let username = "\(usernameValue)"

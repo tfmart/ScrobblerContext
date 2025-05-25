@@ -27,6 +27,6 @@ struct Configuration {
         self.apiKey = apiKey
         self.secretKey = secretKey
         self.serverName = "ScrobblerContext - Last.fm MCP Server"
-        self.serverVersion = "0.1.0"
+        self.serverVersion = "1.0.0"
     }
 }

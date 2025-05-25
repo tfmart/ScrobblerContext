@@ -16,6 +16,6 @@ struct GetTrackTagsInput: ToolInput {
     static let requiredParameters = ["track", "artist"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "autocorrect": true,
-        "username": ""
+        "user": ""
     ]
 }

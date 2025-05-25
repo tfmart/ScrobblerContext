@@ -564,8 +564,8 @@ struct ToolExecutor {
     }
     
     private func validateGetUserInfoArguments(_ arguments: [String: (any Sendable)]) throws {
-        guard let username = arguments.getString(for: "username"), !username.isEmpty else {
-            throw ToolError.missingParameter("username")
+        guard let username = arguments.getString(for: "user"), !username.isEmpty else {
+            throw ToolError.missingParameter("user")
         }
     }
     

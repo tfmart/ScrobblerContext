@@ -13,7 +13,7 @@ struct GetUserFriendsInput: ToolInput {
     let limit: Int
     let page: Int
     
-    static let requiredParameters = ["username"]
+    static let requiredParameters = ["user"]
     static let optionalParameters: [String: (any Sendable)?] = [
         "recent_tracks": false,
         "limit": 50,

@@ -10,6 +10,6 @@ import Foundation
 struct GetUserInfoInput: ToolInput {
     let username: String
     
-    static let requiredParameters = ["username"]
+    static let requiredParameters = ["user"]
     static let optionalParameters: [String: (any Sendable)?] = [:]
 }

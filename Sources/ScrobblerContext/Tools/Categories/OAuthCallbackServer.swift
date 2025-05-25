@@ -159,7 +159,7 @@ final class OAuthCallbackServer: Sendable {
                 let result: [String: (any Sendable)] = [
                     "authenticated": true,
                     "method": "browser_oauth",
-                    "username": username ?? "unknown",
+                    "user": username ?? "unknown",
                     "timestamp": Date().timeIntervalSince1970,
                     "message": "Successfully authenticated via browser OAuth flow"
                 ]
