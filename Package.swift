@@ -15,7 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/modelcontextprotocol/swift-sdk", from: "0.7.1"),
-        .package(url: "https://github.com/tfmart/ScrobbleKit", branch: "sendable"),
+        .package(url: "https://github.com/tfmart/ScrobbleKit", from: "2.0.0"),
         .package(url: "https://github.com/httpswift/swifter.git", from: "1.5.0")
     ],
     targets: [
