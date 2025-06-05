@@ -9,7 +9,26 @@ import Foundation
 import MCP
 import Logging
 
-/// Main MCP Server for Last.fm integration
+/// Main MCP Server for Last.fm integration.
+///
+/// This class serves as the primary entry point for the Model Context Protocol server,
+/// coordinating between the MCP protocol layer, tool execution, and Last.fm service integration.
+///
+/// The server provides 60+ tools organized into categories:
+/// - Authentication (OAuth flow, session management)
+/// - Artist operations (search, info, similar artists)
+/// - Album operations (metadata, tracks, artwork)
+/// - Track operations (details, recommendations, corrections)
+/// - User data (statistics, history, social features)
+/// - Scrobbling (play submission, library management)
+///
+/// ## Usage
+///
+/// ```swift
+/// let server = try MCPServer()
+/// try await server.start()
+/// await server.waitForCompletion()
+/// ```
 final class MCPServer: Sendable {
     private let configuration: Configuration
     private let lastFMService: LastFMService

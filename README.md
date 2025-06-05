@@ -1,103 +1,72 @@
 # ScrobblerContext - Last.fm MCP Server
 
-A Model Context Protocol (MCP) server that provides access to Last.fm's API, built in Swift. Enables AI assistants to search for data suchs as songs, artists and albums on Last.fm, manage user libraries, and scrobble tracks.
+[![npm version](https://badge.fury.io/js/scrobblercontext-mcp.svg)](https://badge.fury.io/js/scrobblercontext-mcp)
+[![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-orange.svg)](https://swift.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![MCP](https://img.shields.io/badge/MCP-Compatible-blue.svg)](https://modelcontextprotocol.io)
+
+A Model Context Protocol (MCP) server that provides access to Last.fm's music database. Built in Swift, it enables AI assistants to search for music, manage user libraries, and scrobble tracks.
+
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Setup with MCP Clients](#setup-with-mcp-clients)
+- [Usage Examples](#usage-examples)
+- [Manual Installation](#manual-installation)
+- [Available Tools](#available-tools)
+- [Contributing](#contributing)
+- [Documentation](#documentation)
+- [Troubleshooting](#troubleshooting)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
 ## Features
 
-### Authentication
-- `authenticate_browser` - Authenticate using secure browser OAuth flow
-- `set_session_key` - Set an existing Last.fm session key  
-- `check_auth_status` - Check current authentication status
-- `restore_session` - Restore authentication from saved session
-- `logout` - Clear authentication and logout
+- **Authentication**: Secure browser OAuth flow with session persistence
+- **Artist Operations**: Search artists, get detailed information, find similar artists
+- **Album Operations**: Search albums, get track listings and metadata
+- **Track Operations**: Search tracks, get details and recommendations
+- **User Data**: Access listening history, statistics, and social features
+- **Scrobbling**: Submit track plays, update now playing status, love/unlove tracks
 
-### Artist Operations
-- `search_artist` - Search for artists by name
-- `get_artist_info` - Get detailed artist information and biography
-- `get_similar_artists` - Find artists similar to specified artist
-- `get_artist_correction` - Get corrected artist name if available
-- `get_artist_tags` - Get tags applied to an artist
-- `get_artist_top_albums` - Get artist's most popular albums
-- `get_artist_top_tracks` - Get artist's most popular tracks
-- `add_artist_tags` - Add personal tags to an artist (requires auth)
-- `remove_artist_tag` - Remove personal tag from artist (requires auth)
+## Quick Start
 
-### Album Operations
-- `search_album` - Search for albums by name
-- `get_album_info` - Get detailed album information and tracklist
-- `get_album_tags` - Get tags applied to an album
-- `get_album_top_tags` - Get most popular tags for an album
-- `add_album_tags` - Add personal tags to an album (requires auth)
-- `remove_album_tag` - Remove personal tag from album (requires auth)
+### Install via npm (Recommended)
 
-### Track Operations
-- `search_track` - Search for tracks by name and optional artist
-- `get_track_info` - Get detailed track information
-- `get_similar_tracks` - Find tracks similar to specified track
-- `get_track_correction` - Get corrected track and artist names
-- `get_track_tags` - Get tags applied to a track
-- `get_track_top_tags` - Get most popular tags for a track
-- `add_track_tags` - Add personal tags to a track (requires auth)
-- `remove_track_tag` - Remove personal tag from track (requires auth)
+```bash
+# Install globally
+npm install -g scrobblercontext-mcp
 
-### User Data
-- `get_user_info` - Get user profile information and statistics
-- `get_user_recent_tracks` - Get user's recently played tracks
-- `get_user_top_artists` - Get user's top artists by time period
-- `get_user_top_tracks` - Get user's top tracks by time period
-- `get_user_top_albums` - Get user's top albums by time period
-- `get_user_top_tags` - Get user's most used tags
-- `get_user_friends` - Get user's friends list
-- `get_user_loved_tracks` - Get user's loved tracks
-- `get_user_personal_tags_for_artists` - Get artists tagged with specific personal tag
+# Set up your Last.fm API credentials
+export LASTFM_API_KEY="your_api_key_here"
+export LASTFM_SECRET_KEY="your_secret_key_here"
 
-### Scrobbling & Library Management
-- `scrobble_track` - Submit a track play to user's library (requires auth)
-- `scrobble_multiple_tracks` - Submit multiple track plays at once (requires auth)
-- `update_now_playing` - Update currently playing track status (requires auth)
-- `love_track` - Mark a track as loved (requires auth)
-- `unlove_track` - Remove track from loved tracks (requires auth)
+# Run the server
+scrobblercontext-mcp
+```
 
-## Installation
+### Get Last.fm API Credentials
 
-### Prerequisites
-- Swift 6.0 or later
-- macOS 13.0 or later
-- Last.fm API credentials ([Get them here](https://www.last.fm/api/account/create))
+1. Visit [Last.fm API Account Creation](https://www.last.fm/api/account/create)
+2. Fill in the application details:
+   - **Application Name**: Your app name (e.g., "My MCP Server")
+   - **Application Description**: Brief description
+   - **Application Homepage URL**: Your website (can be GitHub repo)
+   - **Callback URL**: `http://localhost:8080/callback` (for OAuth)
+3. Save your **API Key** and **Shared Secret**
 
-### Setup
-
-1. **Clone and build**:
-   ```bash
-   git clone https://github.com/tfmart/ScrobblerContext
-   cd ScrobblerContext
-   swift build
-   ```
-
-2. **Set environment variables**:
-   ```bash
-   export LASTFM_API_KEY="your_api_key_here"
-   export LASTFM_SECRET_KEY="your_secret_key_here"
-   ```
-
-3. **Run the server**:
-   ```bash
-   swift run ScrobblerContext
-   ```
-
-The server communicates over stdio following the MCP protocol.
-
-## Using with MCP Clients
+## Setup with MCP Clients
 
 ### Claude Desktop
 
-Add to your Claude Desktop MCP configuration:
+Add to your `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "lastfm": {
-      "command": "path/to/ScrobblerContext",
+      "command": "scrobblercontext-mcp",
       "env": {
         "LASTFM_API_KEY": "your_api_key_here",
         "LASTFM_SECRET_KEY": "your_secret_key_here"
@@ -107,14 +76,23 @@ Add to your Claude Desktop MCP configuration:
 }
 ```
 
+**Configuration file locations:**
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+
 ### Cursor
+
+Add to your MCP settings:
 
 ```json
 {
   "mcpServers": {
-    "swift-version-server": {
-      "type": "stdio",
-      "command": "path/to/ScrobblerContext"
+    "lastfm": {
+      "command": "scrobblercontext-mcp",
+      "env": {
+        "LASTFM_API_KEY": "your_api_key_here", 
+        "LASTFM_SECRET_KEY": "your_secret_key_here"
+      }
     }
   }
 }
@@ -122,21 +100,156 @@ Add to your Claude Desktop MCP configuration:
 
 ### Other MCP Clients
 
-Configure your MCP client to:
-1. Create the `ScrobblerContext` executable
+The server communicates over **stdio** following the Model Context Protocol standard. Configure your client to:
+1. Execute `scrobblercontext-mcp` as the server command
 2. Set the required environment variables
-3. Communicate over stdio
+3. Use stdio transport
 
-### Authentication
+## Usage Examples
 
-Before using authenticated features, run the authentication flow:
+Authenticate with Last.fm:
+```
+User: "Authenticate with Last.fm"
+Assistant: [Uses authenticate_browser tool to start OAuth flow]
+```
 
-1. Use `authenticate_browser` tool to start OAuth flow
-2. Complete authentication in your browser
-3. Session will be saved automatically for future use
+Search for music:
+```
+User: "Find artists similar to Radiohead" 
+Assistant: [Uses get_similar_artists tool to find recommendations]
+```
+
+Scrobble tracks:
+```
+User: "Scrobble 'Bohemian Rhapsody' by Queen"
+Assistant: [Uses scrobble_track tool to submit to your profile]
+```
+
+## Manual Installation
+
+**Prerequisites:**
+- Swift 6.0+ ([Download](https://swift.org/download/))
+- macOS 13.0+ or Linux with Swift support
+- Last.fm API credentials
+
+**Build from source:**
+
+```bash
+git clone https://github.com/tfmart/ScrobblerContext
+cd ScrobblerContext
+swift build
+export LASTFM_API_KEY="your_api_key_here"
+export LASTFM_SECRET_KEY="your_secret_key_here"
+swift run ScrobblerContext
+```
+
+## Available Tools
+
+<details>
+<summary><strong>Authentication Tools (5)</strong></summary>
+
+- `authenticate_browser` - Start OAuth flow in browser
+- `set_session_key` - Set existing session key
+- `check_auth_status` - Check authentication status  
+- `restore_session` - Restore saved session
+- `logout` - Clear authentication
+
+</details>
+
+<details>
+<summary><strong>Artist Tools (9)</strong></summary>
+
+- `search_artist` - Search for artists
+- `get_artist_info` - Get artist details & biography
+- `get_similar_artists` - Find similar artists
+- `get_artist_correction` - Get corrected artist name
+- `get_artist_tags` - Get artist tags
+- `get_artist_top_albums` - Get artist's top albums
+- `get_artist_top_tracks` - Get artist's top tracks
+- `add_artist_tags` - Add personal tags (requires auth)
+- `remove_artist_tag` - Remove personal tag (requires auth)
+
+</details>
+
+<details>
+<summary><strong>Album Tools (6)</strong></summary>
+
+- `search_album` - Search for albums
+- `get_album_info` - Get album details & tracklist
+- `get_album_tags` - Get album tags
+- `get_album_top_tags` - Get popular album tags
+- `add_album_tags` - Add personal tags (requires auth)
+- `remove_album_tag` - Remove personal tag (requires auth)
+
+</details>
+
+<details>
+<summary><strong>Track Tools (8)</strong></summary>
+
+- `search_track` - Search for tracks
+- `get_track_info` - Get track details
+- `get_similar_tracks` - Find similar tracks
+- `get_track_correction` - Get corrected track info
+- `get_track_tags` - Get track tags
+- `get_track_top_tags` - Get popular track tags
+- `add_track_tags` - Add personal tags (requires auth)
+- `remove_track_tag` - Remove personal tag (requires auth)
+
+</details>
+
+<details>
+<summary><strong>User Tools (9)</strong></summary>
+
+- `get_user_info` - Get user profile & stats
+- `get_user_recent_tracks` - Get recent listening history
+- `get_user_top_artists` - Get top artists by period
+- `get_user_top_tracks` - Get top tracks by period
+- `get_user_top_albums` - Get top albums by period
+- `get_user_top_tags` - Get most used tags
+- `get_user_friends` - Get friends list
+- `get_user_loved_tracks` - Get loved tracks
+- `get_user_personal_tags_for_artists` - Get tagged artists
+
+</details>
+
+<details>
+<summary><strong>Scrobble Tools (5)</strong></summary>
+
+- `scrobble_track` - Submit single track play
+- `scrobble_multiple_tracks` - Submit multiple plays
+- `update_now_playing` - Update current track status
+- `love_track` - Mark track as loved
+- `unlove_track` - Remove from loved tracks
+
+</details>
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Documentation
+
+- [API Documentation](https://tfmart.github.io/ScrobblerContext/documentation/scrobblercontext/) - Auto-generated from code
+- [Contributing Guide](CONTRIBUTING.md) - Development setup and guidelines
+- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP specification
+- [Last.fm API](https://www.last.fm/api) - Last.fm API documentation
+
+## Troubleshooting
+
+**Swift not found**: Install Swift from [swift.org](https://swift.org/download/)
+
+**Invalid session key**: Re-run authentication with `authenticate_browser`
+
+**API key errors**: Verify your `LASTFM_API_KEY` and `LASTFM_SECRET_KEY` are correct
+
+**Server disconnects**: Check environment variables are set in MCP client config
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- [Last.fm](https://www.last.fm/) for providing the music data API
+- [Last.fm](https://www.last.fm/) for the music data API
 - [ScrobbleKit](https://github.com/tfmart/ScrobbleKit) for the Swift Last.fm SDK
 - [Model Context Protocol](https://modelcontextprotocol.io/) for the communication standard

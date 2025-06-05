@@ -13,7 +13,39 @@ import Logging
 import FoundationNetworking
 #endif
 
-/// Core service wrapper for ScrobbleKit with enhanced authentication
+/// Core service wrapper for ScrobbleKit with enhanced authentication.
+///
+/// This service provides a comprehensive interface to Last.fm's API through the ScrobbleKit library,
+/// with additional features for OAuth authentication, session management, and error handling.
+///
+/// ## Features
+///
+/// - **Secure Authentication**: OAuth 2.0 flow with automatic session persistence
+/// - **Comprehensive API Coverage**: Search, metadata, scrobbling, and user data operations
+/// - **Session Management**: Automatic session restoration and validation
+/// - **Error Handling**: Robust error handling with detailed logging
+///
+/// ## Authentication Flow
+///
+/// 1. Generate OAuth URL and open in browser
+/// 2. User authorizes the application
+/// 3. Exchange authorization token for session key
+/// 4. Store session key securely for future use
+///
+/// ## Usage
+///
+/// ```swift
+/// let service = LastFMService(apiKey: "key", secretKey: "secret")
+/// 
+/// // Authenticate user
+/// try await service.setSessionKey(sessionKey)
+/// 
+/// // Search for artists
+/// let artists = try await service.searchArtist(query: "Radiohead")
+/// 
+/// // Scrobble a track
+/// try await service.scrobbleTrack(artist: "Queen", track: "Bohemian Rhapsody")
+/// ```
 final class LastFMService: Sendable {
     let manager: SBKManager
     let logger = Logger(label: "com.lastfm.mcp-server.service")

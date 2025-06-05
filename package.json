@@ -1,0 +1,43 @@
+{
+  "name": "scrobblercontext-mcp",
+  "version": "1.0.0",
+  "description": "Last.fm MCP Server - Search music, manage libraries, and scrobble tracks",
+  "keywords": ["mcp", "lastfm", "music", "scrobbling", "model-context-protocol"],
+  "author": "tfmart",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tfmart/ScrobblerContext.git"
+  },
+  "homepage": "https://github.com/tfmart/ScrobblerContext",
+  "bugs": {
+    "url": "https://github.com/tfmart/ScrobblerContext/issues"
+  },
+  "bin": {
+    "scrobblercontext-mcp": "./bin/scrobblercontext-mcp"
+  },
+  "files": [
+    "bin/",
+    "Sources/",
+    "Package.swift",
+    "Package.resolved",
+    "README.md",
+    "CLAUDE.md",
+    "LICENSE",
+    "CONTRIBUTING.md"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "scripts": {
+    "build": "swift build",
+    "start": "swift run ScrobblerContext",
+    "test": "swift test",
+    "clean": "swift package clean",
+    "preinstall": "which swift || (echo 'Error: Swift is required but not installed. Please install Swift from https://swift.org/download/' && exit 1)"
+  },
+  "peerDependencies": {},
+  "devDependencies": {},
+  "os": ["darwin", "linux"],
+  "cpu": ["x64", "arm64"]
+}

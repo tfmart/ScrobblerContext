@@ -1,0 +1,96 @@
+#!/usr/bin/env node
+
+const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+// Get the directory where this package is installed
+const packageDir = path.dirname(__dirname);
+
+// Check if Swift is installed
+function checkSwift() {
+  return new Promise((resolve) => {
+    const swift = spawn('which', ['swift'], { stdio: 'pipe' });
+    swift.on('close', (code) => {
+      resolve(code === 0);
+    });
+  });
+}
+
+// Build the Swift project if needed
+function buildProject() {
+  return new Promise((resolve, reject) => {
+    console.error('🔨 Building ScrobblerContext...');
+    const build = spawn('swift', ['build'], { 
+      cwd: packageDir, 
+      stdio: ['inherit', 'pipe', 'inherit'] 
+    });
+    
+    build.on('close', (code) => {
+      if (code === 0) {
+        console.error('✅ Build complete');
+        resolve();
+      } else {
+        reject(new Error(`Build failed with code ${code}`));
+      }
+    });
+  });
+}
+
+// Run the Swift executable
+function runServer() {
+  return new Promise((resolve, reject) => {
+    const server = spawn('swift', ['run', 'ScrobblerContext'], {
+      cwd: packageDir,
+      stdio: 'inherit'
+    });
+    
+    server.on('close', (code) => {
+      resolve(code);
+    });
+    
+    server.on('error', (err) => {
+      reject(err);
+    });
+  });
+}
+
+async function main() {
+  try {
+    // Check environment variables
+    if (!process.env.LASTFM_API_KEY || !process.env.LASTFM_SECRET_KEY) {
+      console.error('❌ Error: Missing required environment variables');
+      console.error('Please set:');
+      console.error('  export LASTFM_API_KEY="your_api_key_here"');
+      console.error('  export LASTFM_SECRET_KEY="your_secret_key_here"');
+      console.error('');
+      console.error('Get API credentials at: https://www.last.fm/api/account/create');
+      process.exit(1);
+    }
+    
+    // Check if Swift is installed
+    const hasSwift = await checkSwift();
+    if (!hasSwift) {
+      console.error('❌ Error: Swift is required but not installed');
+      console.error('Please install Swift from: https://swift.org/download/');
+      process.exit(1);
+    }
+    
+    // Check if project is built
+    const executablePath = path.join(packageDir, '.build', 'debug', 'ScrobblerContext');
+    if (!fs.existsSync(executablePath)) {
+      await buildProject();
+    }
+    
+    // Run the server
+    console.error('🎵 Starting Last.fm MCP Server...');
+    const exitCode = await runServer();
+    process.exit(exitCode);
+    
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    process.exit(1);
+  }
+}
+
+main();

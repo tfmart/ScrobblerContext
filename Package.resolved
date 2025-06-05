@@ -1,5 +1,5 @@
 {
-  "originHash" : "02cf802940e8ee0be8234ecb9212ed0bde963c0a8eba31989155def6c006b836",
+  "originHash" : "33e36eefeb93583fdfc69d48ef88cc31fcdec16beb786bd57d24aeafce4feaac",
   "pins" : [
     {
       "identity" : "eventsource",
@@ -15,8 +15,26 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tfmart/ScrobbleKit",
       "state" : {
-        "branch" : "sendable",
-        "revision" : "2fcbd69d545596c777ed317a253caceaa654a3fe"
+        "revision" : "bfc32f76dbff9c836841d119dfffcd5f6350d901",
+        "version" : "2.0.0"
+      }
+    },
+    {
+      "identity" : "swift-docc-plugin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-docc-plugin",
+      "state" : {
+        "revision" : "d1691545d53581400b1de9b0472d45eb25c19fed",
+        "version" : "1.4.4"
+      }
+    },
+    {
+      "identity" : "swift-docc-symbolkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-docc-symbolkit",
+      "state" : {
+        "revision" : "b45d1f2ed151d057b54504d653e0da5552844e34",
+        "version" : "1.0.0"
       }
     },
     {
