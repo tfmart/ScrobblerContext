@@ -668,23 +668,61 @@ struct ToolExecutor {
         }
     }
     
+    
     private func validateScrobbleMultipleTracksArguments(_ arguments: [String: (any Sendable)]) throws {
         guard let tracksValue = arguments["tracks"] else {
             throw ToolError.missingParameter("tracks")
         }
-        
-        guard let tracks = tracksValue as? [[String: Any]], !tracks.isEmpty else {
+
+        let tracks: [[String: (any Sendable)]] = try {
+            if let array = tracksValue as? [[String: (any Sendable)]] {
+                return array
+            } else if let array = tracksValue as? [[String: String]] {
+                return array.map { $0.mapValues { $0 as (any Sendable) } }
+            } else if let array = tracksValue as? [any Sendable] {
+                return try array.enumerated().map { index, item in
+                    if let dict = item as? [String: (any Sendable)] {
+                        return dict
+                    } else if let dict = item as? [String: String] {
+                        return dict.mapValues { $0 as (any Sendable) }
+                    } else {
+                        throw ToolError.invalidParameterType("tracks[\(index)]", expected: "track object with artist and track fields")
+                    }
+                }
+            } else {
+                throw ToolError.invalidParameterType("tracks", expected: "non-empty array of track objects")
+            }
+        }()
+
+        guard !tracks.isEmpty else {
             throw ToolError.invalidParameterType("tracks", expected: "non-empty array of track objects")
         }
-        
-        // Validate each track object
+
         for (index, track) in tracks.enumerated() {
             guard let artist = track["artist"] as? String, !artist.isEmpty else {
                 throw ToolError.invalidParameterType("tracks[\(index)].artist", expected: "non-empty string")
             }
-            
+
             guard let trackName = track["track"] as? String, !trackName.isEmpty else {
                 throw ToolError.invalidParameterType("tracks[\(index)].track", expected: "non-empty string")
+            }
+
+            if let album = track["album"], !(album is String) {
+                throw ToolError.invalidParameterType("tracks[\(index)].album", expected: "string")
+            }
+
+            if let timestamp = track["timestamp"],
+               !(timestamp is String || timestamp is Int || timestamp is Double) {
+                throw ToolError.invalidParameterType("tracks[\(index)].timestamp", expected: "string, number, or Unix timestamp")
+            }
+
+            if let duration = track["duration"],
+               !(duration is Int || duration is Double) {
+                throw ToolError.invalidParameterType("tracks[\(index)].duration", expected: "number (seconds)")
+            }
+
+            if let trackNumber = track["track_number"], !(trackNumber is Int) {
+                throw ToolError.invalidParameterType("tracks[\(index)].track_number", expected: "integer")
             }
         }
     }
